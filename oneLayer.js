@@ -1,5 +1,5 @@
 // world specs allow us to translate from canvas pixels to world voxels [voxels heretofore represent world units]
-var worldSpecs = {
+const worldSpecs = {
   min_x: -10,
   max_x: 10,
   min_y: -15,
@@ -16,7 +16,7 @@ var worldSpecs = {
 // thermometers should have structure: x, y (voxel at which temp is collected), color
 // if a thermometer has a 'series' field, will save data
 // cups should have structure: x, y (top-left,top-right), width, height (voxels), thickness ( of wall in voxels)
-var worldObjects = {
+const worldObjects = {
   thermometers:[
     {x:0, y:-1, color:"#00FF00", saveSeries:true},
     {x:0, y:7, color:"#FF00DD"}
@@ -69,7 +69,7 @@ var worldObjects = {
   }
 };
 
-var stage, world = null;
+let stage, world = null;
 
 function init() {
   // initialize values
@@ -91,7 +91,7 @@ function init() {
     value: 5,
     step: 1,
     change: function (event, ui) {
-      var key = event.target.id.replace("slider-","");
+      const key = event.target.id.replace("slider-","");
       worldSpecs.speedMult = ui.value;
       worldSpecs.tickArray = randomizedArrayOfTen(worldSpecs.speedMult);
       WISE_onchange('slide-change-'+key, event,ui);
@@ -99,7 +99,7 @@ function init() {
   });
   $("#button-run").button();
   $("#button-restart").button();
-  for (var key in worldObjects.materials) {
+  for (const key in worldObjects.materials) {
     $("#select-material").append($('<option>', {id:"select-"+key, text:key}));
   }
   $("#select-material").selectmenu({
@@ -120,7 +120,7 @@ function init() {
   $("#select-bevTemp").selectmenu({
     change: function( event, ui ) {
       //console.log(event, ui)
-      var regexp = /([0-9]+)/;
+      const regexp = /([0-9]+)/;
       if (ui.item.index > 0 && regexp.exec(ui.item.label) != null) {
         worldObjects.cups[0].liquid_temperature = parseInt(regexp.exec(ui.item.label)[1]);
       } else {
@@ -135,7 +135,7 @@ function init() {
   $("#select-airTemp").selectmenu({
     change: function( event, ui ) {
       //console.log(event, ui)
-      var regexp = /([0-9]+)/;
+      const regexp = /([0-9]+)/;
       if (ui.item.index > 0 && regexp.exec(ui.item.label) != null) {
         worldObjects.air.temperature = parseInt(regexp.exec(ui.item.label)[1]);
       } else {
@@ -150,12 +150,12 @@ function init() {
   $( "#dialog" ).dialog({ autoOpen: false, position:{my:"left bottom", at:"left bottom", of: "#canvas"} });
 
   // setup easeljs
-  var canvas = $("#canvas");
+  const canvas = $("#canvas");
   stage = new createjs.Stage(canvas[0]);
   initWorld();
   // draw a colormap on the right of the world
-  var colorMap = new createjs.Container();
-  var text = new createjs.Text("Temperature \nColors", "16px Arial", "#008833");
+  const colorMap = new createjs.Container();
+  const text = new createjs.Text("Temperature \nColors", "16px Arial", "#008833");
   text.x = 0;
   text.y = 0;
   colorMap.addChild(text);
@@ -163,14 +163,14 @@ function init() {
   colorMap.addChild(colorMap.shape);
   colorMap.shape.height_px = 200;
   colorMap.shape.width_px = 20;
-  for (var t = worldSpecs.temperature_max; t >= worldSpecs.temperature_min; t--) {
-    var hsl = tempToHSL(t);
-    var col = "hsl(" + hsl.h + "," + hsl.s + "," + hsl.l + ")"
-    var height_px = colorMap.shape.height_px / (worldSpecs.temperature_range+1)
+  for (let t = worldSpecs.temperature_max; t >= worldSpecs.temperature_min; t--) {
+    const hsl = tempToHSL(t);
+    const col = "hsl(" + hsl.h + "," + hsl.s + "," + hsl.l + ")"
+    const height_px = colorMap.shape.height_px / (worldSpecs.temperature_range+1)
     colorMap.shape.graphics.beginFill(col).drawRect(20, 60 + (worldSpecs.temperature_max - t) * height_px, colorMap.shape.width_px, height_px).endFill();
 
     if (t % 20 == 0) {
-      var text = new createjs.Text(t+ " °C", "14px Arial", "#008833");
+      const text = new createjs.Text(t+ " °C", "14px Arial", "#008833");
       text.x = 20 + colorMap.shape.width_px + 4;
       text.y = 60 + (worldSpecs.temperature_max - t) * height_px - 6;
       colorMap.addChild(text);
@@ -199,12 +199,12 @@ function initWorld() {
     world.addChild(world.heatShape);
 
     //setup outlines
-    for (var i = 0; i < worldObjects.cups.length; i++) {
-      var cup = worldObjects.cups[i];
-      var topleft = voxelToPixels(cup.x, cup.y+cup.height-1);
-      var outline = cup.outline = new createjs.Shape();
+    for (let i = 0; i < worldObjects.cups.length; i++) {
+      const cup = worldObjects.cups[i];
+      let topleft = voxelToPixels(cup.x, cup.y+cup.height-1);
+      const outline = cup.outline = new createjs.Shape();
       world.addChild(outline);
-      var text = new createjs.Text("Cup", "12px Arial", "black");
+      let text = new createjs.Text("Cup", "12px Arial", "black");
       text.x = topleft.x0 + cup.width*worldSpecs.voxel_width/2-10;
       text.y = topleft.y0 + 5;// + box.height/2;
       world.addChild(text);
@@ -217,10 +217,10 @@ function initWorld() {
     }
 
     // draw thermometers
-    for (var i = 0; i < worldObjects.thermometers.length; i++) {
-      var thermometer = worldObjects.thermometers[i];
-      var shape = new createjs.Shape();
-      var box = voxelToPixels(thermometer.x, thermometer.y);
+    for (let i = 0; i < worldObjects.thermometers.length; i++) {
+      const thermometer = worldObjects.thermometers[i];
+      const shape = new createjs.Shape();
+      const box = voxelToPixels(thermometer.x, thermometer.y);
       shape.graphics.setStrokeStyle(2).beginStroke(thermometer.color).beginFill("white").drawRoundRect(-box.width/4,-box.height/4,box.width/2,50,4).endFill().endStroke();
       shape.graphics.setStrokeStyle(2).beginStroke(thermometer.color).beginFill("white").drawCircle(0,0,box.width/2).endFill().endStroke();
       shape.x = box.x0 + box.width/2;
@@ -243,29 +243,29 @@ function initWorld() {
 
   world.voxels = [];
   // first assume everything is air
-  for (var x = worldSpecs.min_x; x <= worldSpecs.max_x; x++) {
-    for (var y = worldSpecs.min_y; y <= worldSpecs.max_y; y++) {
+  for (let x = worldSpecs.min_x; x <= worldSpecs.max_x; x++) {
+    for (let y = worldSpecs.min_y; y <= worldSpecs.max_y; y++) {
       world.voxels.push({x:x, y:y, temperature:worldObjects.air.temperature, conductivity:worldObjects.air.conductivity, type:"air", update:true, color:worldObjects.air.color});
-      var box = voxelToPixels(x, y);
+      const box = voxelToPixels(x, y);
       if (worldObjects.air.temperature != null) {
         world.shape.graphics.beginFill(worldObjects.air.color).drawRect(box.x0, box.y0, box.width, box.height).endFill();
       }
     }
   }
 
-  for (var i = 0; i < worldObjects.cups.length; i++) {
-    var cup = worldObjects.cups[i];
+  for (let i = 0; i < worldObjects.cups.length; i++) {
+    const cup = worldObjects.cups[i];
     // only draw if the material is selected
     if (cup.material != null && cup.material.length > 0) {
       // now update for cup materials (this will be a bit redundant because we are updating the liquid area twice, but not too bad)
       for (x = cup.x; x < cup.x+cup.width; x++) {
         for (y = cup.y; y < cup.y+cup.height; y++) {
-          var voxel = getVoxel(x, y);
+          const voxel = getVoxel(x, y);
           voxel.temperature = worldObjects.air.temperature; //cup.material_temperature;
           voxel.conductivity = worldObjects.materials[cup.material].conductivity;
           voxel.color = worldObjects.materials[cup.material].color;
           voxel.type = "material-" + i;
-          var box = voxelToPixels(x, y);
+          const box = voxelToPixels(x, y);
           world.shape.graphics.beginFill(voxel.color).drawRect(box.x0, box.y0, box.width, box.height).endFill();
         }
       }
@@ -273,12 +273,12 @@ function initWorld() {
         // now update for liquid
         for (x = cup.x+cup.thickness; x < cup.x+cup.width-cup.thickness; x++) {
           for (y = cup.y+cup.thickness; y < cup.y+cup.height-cup.thickness; y++) {
-            var voxel = getVoxel(x, y);
+            const voxel = getVoxel(x, y);
             voxel.temperature = cup.liquid_temperature;
             voxel.conductivity = worldObjects.liquids[cup.liquid].conductivity;
             voxel.color = worldObjects.liquids[cup.liquid].color;
             voxel.type = "liquid-"+i;
-            var box = voxelToPixels(x, y);
+            const box = voxelToPixels(x, y);
             world.shape.graphics.beginFill(voxel.color).drawRect(box.x0, box.y0, box.width, box.height).endFill();
           }
         }
@@ -288,14 +288,14 @@ function initWorld() {
   world.shape.cache(0, 0, worldSpecs.width_px, worldSpecs.height_px);
 
   // draw outlines to match cup color
-  for (var i = 0; i < worldObjects.cups.length; i++) {
-    var cup = worldObjects.cups[i];
-    var topleft = voxelToPixels(cup.x, cup.y+cup.height-1);
-    var outline = cup.outline;
-    var color = cup.material != null && cup.material.length > 0 ? (worldObjects.materials[cup.material].stroke_color != null ? worldObjects.materials[cup.material].stroke_color: worldObjects.materials[cup.material].color) : "#444444";
+  for (let i = 0; i < worldObjects.cups.length; i++) {
+    const cup = worldObjects.cups[i];
+    const topleft = voxelToPixels(cup.x, cup.y+cup.height-1);
+    const outline = cup.outline;
+    const color = cup.material != null && cup.material.length > 0 ? (worldObjects.materials[cup.material].stroke_color != null ? worldObjects.materials[cup.material].stroke_color: worldObjects.materials[cup.material].color) : "#444444";
     outline.graphics.clear().setStrokeStyle(1).beginStroke(color).drawRect(topleft.x0, topleft.y0, cup.width*worldSpecs.voxel_width, cup.height*worldSpecs.voxel_height).endStroke();
 
-    var itopleft = voxelToPixels(cup.x+cup.thickness, cup.y+cup.height-1-1*cup.thickness);
+    const itopleft = voxelToPixels(cup.x+cup.thickness, cup.y+cup.height-1-1*cup.thickness);
     //outline = new createjs.Shape();
     outline.graphics.setStrokeStyle(1).beginStroke(color).drawRect(itopleft.x0, itopleft.y0, (cup.width-2*cup.thickness)*worldSpecs.voxel_width,  (cup.height-2*cup.thickness)*worldSpecs.voxel_height).endStroke();
     outline.cache(topleft.x0-1, topleft.y0-1, cup.width*worldSpecs.voxel_width+2, cup.height*worldSpecs.voxel_height+2);
@@ -304,9 +304,9 @@ function initWorld() {
   }
 
   // update temperature on thermometers
-  for (var i = 0; i < worldObjects.thermometers.length; i++) {
-    var thermometer = worldObjects.thermometers[i];
-    var voxel = getVoxel(thermometer.x, thermometer.y);
+  for (let i = 0; i < worldObjects.thermometers.length; i++) {
+    const thermometer = worldObjects.thermometers[i];
+    const voxel = getVoxel(thermometer.x, thermometer.y);
     thermometer.text.text = voxel.temperature == null ? "" : voxel.temperature + " °C";
   }
 
@@ -323,23 +323,23 @@ function initWorld() {
  **  To make it function like NetLogo we need to shuffle the voxels
  */
 function updateTemperatures () {
-  var indexArray = shuffledIndexArray(world.voxels.length);
-  for (var i = 0; i < world.voxels.length; i++) {
-    var index = indexArray[i];
-    var voxel = world.voxels[index];
-    var x = voxel.x;
-    var y = voxel.y;
+  const indexArray = shuffledIndexArray(world.voxels.length);
+  for (let i = 0; i < world.voxels.length; i++) {
+    const index = indexArray[i];
+    const voxel = world.voxels[index];
+    const x = voxel.x;
+    const y = voxel.y;
     //if (x == worldObjects.thermometers[1].x && y == worldObjects.thermometers[1].y) {
     //  debugger;
     //}
-    var my_temp = voxel.temperature;
-    var my_con = voxel.conductivity;
-    var q = 0 // this will be the net flow of energy
-    var neighborIndices = [[x, y-1], [x+1,y],[x, y+1],[x-1, y]];
-    for (var j = 0; j < neighborIndices.length; j++) {
-      var neighbor = getVoxel(neighborIndices[j][0], neighborIndices[j][1]);
+    const my_temp = voxel.temperature;
+    const my_con = voxel.conductivity;
+    let q = 0 // this will be the net flow of energy
+    const neighborIndices = [[x, y-1], [x+1,y],[x, y+1],[x-1, y]];
+    for (let j = 0; j < neighborIndices.length; j++) {
+      const neighbor = getVoxel(neighborIndices[j][0], neighborIndices[j][1]);
       if (neighbor != null) {
-        var con = Math.min(neighbor.conductivity, my_con);
+        const con = Math.min(neighbor.conductivity, my_con);
         q += worldSpecs.flow_speed * con / createjs.Ticker.framerate * (neighbor.temperature - my_temp) / worldSpecs.temperature_range;
         //q += con / 30 * (neighbor.temperature - my_temp) / worldSpecs.temperature_range;
       }
@@ -358,8 +358,8 @@ function updateTemperatures () {
 }
 
 function shuffledIndexArray(n) {
-  var a = Array.apply(null, {length:n}).map(Number.call, Number);
-  var j, x, i;
+  const a = Array.apply(null, {length:n}).map(Number.call, Number);
+  let j, x, i;
   for (i = a.length; i; i--) {
     j = Math.floor(Math.random() * i);
     x = a[i - 1];
@@ -370,10 +370,10 @@ function shuffledIndexArray(n) {
 }
 
 function recordTemperatures() {
-  var seriesCount = 0;
-  for (var i = 0; i < worldObjects.thermometers.length; i++) {
-    var thermometer = worldObjects.thermometers[i];
-    var voxel = getVoxel(thermometer.x, thermometer.y);
+  let seriesCount = 0;
+  for (let i = 0; i < worldObjects.thermometers.length; i++) {
+    const thermometer = worldObjects.thermometers[i];
+    const voxel = getVoxel(thermometer.x, thermometer.y);
     thermometer.temperature = voxel.temperature;
     thermometer.text.text = voxel.temperature.toFixed(1) + " °C";
     if (thermometer.saveSeries != null && thermometer.saveSeries &&
@@ -388,21 +388,21 @@ function recordTemperatures() {
 
 function startTrial() {
   // reset thermometers
-  var seriesCount = 0;
+  let seriesCount = 0;
   worldSpecs.series = [];
   worldSpecs.timestamp = new Date();
-  for (var i = 0; i < worldObjects.thermometers.length; i++) {
-    var thermometer = worldObjects.thermometers[i];
-    var voxel = getVoxel(thermometer.x, thermometer.y);
+  for (let i = 0; i < worldObjects.thermometers.length; i++) {
+    const thermometer = worldObjects.thermometers[i];
+    const voxel = getVoxel(thermometer.x, thermometer.y);
     thermometer.text.text = "";
     // if a 'series' field exists set up to save data
     if (thermometer.saveSeries != null && thermometer.saveSeries) {
-      var series = {data:[]};
+      const series = {data:[]};
       // label should be material-TempBev-TempAir
-      var mat = $("#select-material option:selected").text();
-      var bev = /^([a-zA-Z]+)/.exec($("#select-bevTemp option:selected").text())[1];
-      var air = /^([a-zA-Z]+)/.exec($("#select-airTemp option:selected").text())[1];
-      var name = mat +"-"+bev+"Bev"+"-"+air+"Air";
+      const mat = $("#select-material option:selected").text();
+      const bev = /^([a-zA-Z]+)/.exec($("#select-bevTemp option:selected").text())[1];
+      const air = /^([a-zA-Z]+)/.exec($("#select-airTemp option:selected").text())[1];
+      const name = mat +"-"+bev+"Bev"+"-"+air+"Air";
       if (seriesCount > 0) {
         name = name + "-" + seriesCount;
       }
@@ -421,10 +421,10 @@ function startTrial() {
 /** Will initialize (reset) world. If in a trial will save state to Wise5*/
 function endTrial() {
   if (world.isRunning) {
-    var endtime = new Date();
+    const endtime = new Date();
     console.log("Time Running", Math.abs(endtime.getTime() - worldSpecs.timestamp.getTime()));
     //console.log(worldObjects.thermometers);
-    var state = {};
+    const state = {};
     state.messageType = "studentWork";
     state.isAutoSave = false;
     state.isSubmit = false;
@@ -438,12 +438,12 @@ function redraw() {
   if (world != null && world.isRunning && !world.isPaused) {
     world.heatShape.graphics.clear();
     // redraw all empty voxels (that need an update) according to temperature
-    for (var i = 0; i < world.voxels.length; i++) {
-      var voxel = world.voxels[i];
-      var hsl = tempToHSL(voxel.temperature);
+    for (let i = 0; i < world.voxels.length; i++) {
+      const voxel = world.voxels[i];
+      const hsl = tempToHSL(voxel.temperature);
       voxel.heat_color = "hsla("+hsl.h+", "+hsl.s+", "+hsl.l+", 1.0)";
       voxel.stroke_color = "hsla("+hsl.h+", 50%, "+hsl.l+", 1.0)";
-      var box = voxelToPixels(voxel.x, voxel.y);
+      const box = voxelToPixels(voxel.x, voxel.y);
       world.heatShape.graphics.setStrokeStyle(0.5).beginStroke(voxel.stroke_color).beginFill(voxel.heat_color).drawRect(box.x0, box.y0, box.width, box.height).endFill().endStroke();
       voxel.update = false;
     }
@@ -460,7 +460,7 @@ function tick() {
     if (worldSpecs.tickArray.length == 0) {
       worldSpecs.tickArray = randomizedArrayOfTen(worldSpecs.speedMult);
     }
-    var canTick = worldSpecs.tickArray.splice(0, 1)[0];
+    const canTick = worldSpecs.tickArray.splice(0, 1)[0];
     if (canTick == 1) {
       updateTemperatures();
       recordTemperatures();
@@ -469,7 +469,7 @@ function tick() {
       if (world.ticks >= worldSpecs.max_ticks) {
         endTrial();
       } else {
-        var state = {};
+        const state = {};
         state.messageType = "studentDataChanged";
         state.isAutoSave = false;
         state.isSubmit = false;
@@ -491,7 +491,7 @@ function tick() {
   */
 function voxelToPixels(x, y) {
   if (x >= worldSpecs.min_x && x <= worldSpecs.max_x && y >= worldSpecs.min_y && y <= worldSpecs.max_y) {
-    var box = {
+    const box = {
       x0: worldSpecs.width_px / 2 + x * worldSpecs.voxel_width - worldSpecs.voxel_width/2,
       y0: worldSpecs.height_px / 2 - y * worldSpecs.voxel_height - worldSpecs.voxel_height/2,
       x1: worldSpecs.width_px / 2 + x * worldSpecs.voxel_width + worldSpecs.voxel_width/2,
@@ -507,8 +507,8 @@ function voxelToPixels(x, y) {
 
 /** Given the x, y coordinates of the voxel, retrieve the appropriate voxel from the array */
 function getVoxelIndex (vx, vy) {
-  var xdiff = vx - worldSpecs.min_x;
-  var ydiff = vy - worldSpecs.min_y;
+  const xdiff = vx - worldSpecs.min_x;
+  const ydiff = vy - worldSpecs.min_y;
   return worldSpecs.height * xdiff + ydiff;
 }
 
@@ -517,10 +517,10 @@ function getVoxel(vx, vy) {
 }
 
 function tempToHSL(temperature) {
-  var temp_frac = (temperature - worldSpecs.temperature_min) / worldSpecs.temperature_range;
-  //var h = 120 - temp_frac * 120;
+  const temp_frac = (temperature - worldSpecs.temperature_min) / worldSpecs.temperature_range;
+  //const h = 120 - temp_frac * 120;
   //if (h > 90) h = (h-90)+180;
-  var hsl = {};
+  const hsl = {};
   if (temp_frac < 0.5) {
     hsl.h = 225;
     hsl.s = "100%";
@@ -534,14 +534,14 @@ function tempToHSL(temperature) {
 }
 
 function randomizedArrayOfTen(numOnes) {
-  var arr1 = Array(numOnes).fill(1);
-  var arr0 = Array(10-numOnes).fill(0);
-  var arr = arr1.concat(arr0);
+  const arr1 = Array(numOnes).fill(1);
+  const arr0 = Array(10-numOnes).fill(0);
+  const arr = arr1.concat(arr0);
   return fisherYates(arr);
 }
 
 function fisherYates( array ) {
-  var count = array.length, randomnumber, temp;
+  let count = array.length, randomnumber, temp;
   while( count ) {
     randomnumber = Math.random() * count-- | 0;
     temp = array[count];
@@ -581,7 +581,7 @@ function restart() {
 }
 
 function getWorldState() {
-  var state = {
+  const state = {
     "ticks": world.ticks,
     "material0": worldObjects.cups[0].material,
     "material0_initial_temperature": worldObjects.cups[0].material_temperature,
@@ -594,8 +594,8 @@ function getWorldState() {
     }
   };
 
-  for (var i = 0; i < worldObjects.thermometers.length; i++) {
-    var thermometer = worldObjects.thermometers[i];
+  for (let i = 0; i < worldObjects.thermometers.length; i++) {
+    const thermometer = worldObjects.thermometers[i];
     state['thermometer'+i+"-temperature"] = thermometer.temperature.toFixed(1);
   }
   //console.log(state['trial'].series[0].data.length);
@@ -634,7 +634,9 @@ function WISE_saveState(componentState) {
     componentState.timestamp = new Date().getTime();
     try {
       parent.postMessage(componentState, "*");
-    } catch(err) {console.log("not posted");}
+    } catch(err) {
+      console.log("not posted");
+    }
   }
 }
 
