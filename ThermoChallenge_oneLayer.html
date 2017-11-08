@@ -9,692 +9,696 @@
 <script src="easel.js"></script>
 <script src="util.js"></script>
 <script type="text/javascript">
-	// world specs allow us to translate from canvas pixels to world voxels [voxels heretofore represent world units]
-	var worldSpecs = {
-		min_x: -10,
-		max_x: 10,
-		min_y: -15,
-		max_y: 15,
-		temperature_min: 0,
-		temperature_max: 100,
-		flow_speed: 4,
-		max_ticks:30 * 30,
-		series:[],
-		trialId: null
-	}
+  // world specs allow us to translate from canvas pixels to world voxels [voxels heretofore represent world units]
+  var worldSpecs = {
+    min_x: -10,
+    max_x: 10,
+    min_y: -15,
+    max_y: 15,
+    temperature_min: 0,
+    temperature_max: 100,
+    flow_speed: 4,
+    max_ticks:30 * 30,
+    series:[],
+    trialId: null
+  };
+
+  // world objects include thermometers and cups
+  // thermometers should have structure: x, y (voxel at which temp is collected), color
+  // if a thermometer has a 'series' field, will save data
+  // cups should have structure: x, y (top-left,top-right), width, height (voxels), thickness ( of wall in voxels)
+  var worldObjects = {
+    thermometers:[
+      {x:0, y:-1, color:"#00FF00", saveSeries:true},
+      {x:0, y:7, color:"#FF00DD"}
+    ],
+    cups: [
+      {x: -6, y: -8, width: 13, height: 13, thickness:3, liquid:"Water", material:"", liquid_temperature:null, material_temperature:25}
+    ],
+    air: {
+      temperature:null,
+      conductivity:100,
+      color:"#FFEECC"
+    },
+    liquids: {
+      "Water":{
+        conductivity:100,
+        color:"rgba(220,220,250,0.7)"
+      }
+    },
+    materials: {
+      "Aluminum":{
+        conductivity: 200,
+        color:"#AAAAAA",
+        stroke_color:"#888888"
+      },
+      "Wood":{
+        conductivity: 10,
+        color:"#996622",
+        stroke_color:"#774400"
+      },
+      "Styrofoam":{
+        conductivity: 1,
+        color:"#FFFFFF",
+        stroke_color:"#DDDDDD"
+      },
+      "Clay":{
+        conductivity: 20,
+        color:"#FF8844",
+        stroke_color:"#DD6622"
+      },
+      "Glass":{
+        conductivity: 40,
+        color:"rgba(150,200,180,0.5)",
+        stroke_color:"rgba(100,150,130,0.8)"
+      },
+      "Plastic":{
+        conductivity: 20,
+        color:"#FF33AA",
+        stroke_color:"#DD1188"
+      }
+    }
+  };
+
+  var stage, world = null;
+
+  function init(){
+    // initialize values
+    worldSpecs.width_px = $("#canvas").width() - 100; // use 100 for the color map
+    worldSpecs.height_px = $("#canvas").height()
+    worldSpecs.width = worldSpecs.max_x - worldSpecs.min_x + 1;
+    worldSpecs.height = worldSpecs.max_y - worldSpecs.min_y + 1;
+    worldSpecs.voxel_width = worldSpecs.width_px / (worldSpecs.width);
+    worldSpecs.voxel_height = worldSpecs.height_px / (worldSpecs.height);
+    worldSpecs.temperature_range = worldSpecs.temperature_max - worldSpecs.temperature_min;
+    worldSpecs.speedMult = 5;
+    worldSpecs.tickArray = randomizedArrayOfTen(worldSpecs.speedMult);
+    // setup ui elements
+    $("#slider-speed").slider({
+      orientation: "horizontal",
+      range: "min",
+      min: 0,
+      max: 10,
+      value: 5,
+      step: 1,
+      change: function (event, ui){
+        var key = event.target.id.replace("slider-","");
+        worldSpecs.speedMult = ui.value;
+        worldSpecs.tickArray = randomizedArrayOfTen(worldSpecs.speedMult);
+        WISE_onchange('slide-change-'+key, event,ui);
+      }
+    });
+    $("#button-run").button();
+    $("#button-restart").button();
+    for (var key in worldObjects.materials){
+      $("#select-material").append($('<option>', {id:"select-"+key, text:key}));
+    }
+    $("#select-material").selectmenu({
+      change: function( event, ui ) {
+        //console.log(event, ui)
+        if (ui.item.index > 0){
+          worldObjects.cups[0].material = ui.item.label;
+        } else {
+          // first index is just instructions
+          orldObjects.cups[0].material = "";
+        }
+        WISE_onchange('select-material-changed',event, ui);
+        endTrial();
+      },
+      width:160
+    });
+
+    $("#select-bevTemp").selectmenu({
+      change: function( event, ui ) {
+        //console.log(event, ui)
+        var regexp = /([0-9]+)/;
+        if (ui.item.index > 0 && regexp.exec(ui.item.label) != null){
+          worldObjects.cups[0].liquid_temperature = parseInt(regexp.exec(ui.item.label)[1]);
+        } else {
+          worldObjects.cups[0].liquid_temperature = null;
+        }
+        WISE_onchange('select-bevTemp-changed',event, ui);
+        endTrial();
+      },
+      width:160
+    });
+
+    $("#select-airTemp").selectmenu({
+      change: function( event, ui ) {
+        //console.log(event, ui)
+        var regexp = /([0-9]+)/;
+        if (ui.item.index > 0 && regexp.exec(ui.item.label) != null){
+          worldObjects.air.temperature = parseInt(regexp.exec(ui.item.label)[1]);
+        } else {
+          worldObjects.air.temperature = null;
+        }
+        WISE_onchange('select-airTemp-changed',event, ui);
+        endTrial();
+      },
+      width:160
+    });
+
+    $( "#dialog" ).dialog({ autoOpen: false, position:{my:"left bottom", at:"left bottom", of: "#canvas"} });
+
+    // setup easeljs
+    var canvas = $("#canvas");
+    stage = new createjs.Stage(canvas[0]);
+    initWorld();
+    // draw a colormap on the right of the world
+    var colorMap = new createjs.Container();
+    var text = new createjs.Text("Temperature \nColors", "16px Arial", "#008833");
+    text.x = 0;
+    text.y = 0;
+    colorMap.addChild(text);
+    colorMap.shape = new createjs.Shape();
+    colorMap.addChild(colorMap.shape);
+    colorMap.shape.height_px = 200;
+    colorMap.shape.width_px = 20;
+    for (var t = worldSpecs.temperature_max; t >= worldSpecs.temperature_min; t--){
+      var hsl = tempToHSL(t);
+      var col = "hsl(" + hsl.h + "," + hsl.s + "," + hsl.l + ")"
+      var height_px = colorMap.shape.height_px / (worldSpecs.temperature_range+1)
+      colorMap.shape.graphics.beginFill(col).drawRect(20, 60 + (worldSpecs.temperature_max - t) * height_px, colorMap.shape.width_px, height_px).endFill();
+
+      if (t % 20 == 0){
+        var text = new createjs.Text(t+ " °C", "14px Arial", "#008833");
+        text.x = 20 + colorMap.shape.width_px + 4;
+        text.y = 60 + (worldSpecs.temperature_max - t) * height_px - 6;
+        colorMap.addChild(text);
+      }
+    }
+    colorMap.shape.cache(20, 60, colorMap.shape.width_px, colorMap.shape.height_px);
+    colorMap.x = worldSpecs.width_px + 5;
+    colorMap.y = 5;
+    stage.addChild(colorMap);
+
+    createjs.Ticker.framerate = 120;
+    createjs.Ticker.addEventListener("tick", tick);
+
+    if (isHideCanvas()) {
+      $("#canvas").hide();
+    }
+  }
+
+  /** Function returns a blank world where each voxel is set to initial conditions */
+  function initWorld(){
+    if (world == null){
+      world = new createjs.Container();
+      world.shape = new createjs.Shape();
+      world.addChild(world.shape);
+      world.heatShape = new createjs.Shape();
+      world.addChild(world.heatShape);
+
+      //setup outlines
+      for (var i = 0; i < worldObjects.cups.length; i++){
+        var cup = worldObjects.cups[i];
+        var topleft = voxelToPixels(cup.x, cup.y+cup.height-1);
+        var outline = cup.outline = new createjs.Shape();
+        world.addChild(outline);
+        var text = new createjs.Text("Cup", "12px Arial", "black");
+        text.x = topleft.x0 + cup.width*worldSpecs.voxel_width/2-10;
+        text.y = topleft.y0 + 5;// + box.height/2;
+        world.addChild(text);
+
+        topleft = voxelToPixels(cup.x+cup.thickness, cup.y+cup.height-1-1*cup.thickness);
+        text = new createjs.Text("Liquid", "12px Arial", "black");
+        text.x = topleft.x0 + (cup.width-2*cup.thickness)*worldSpecs.voxel_width/2-12;
+        text.y = topleft.y0 + (cup.height-1*cup.thickness)*worldSpecs.voxel_height/2-2;// + box.height/2;
+        world.addChild(text);
+      }
+
+      // draw thermometers
+      for (var i = 0; i < worldObjects.thermometers.length; i++){
+        var thermometer = worldObjects.thermometers[i];
+        var shape = new createjs.Shape();
+        var box = voxelToPixels(thermometer.x, thermometer.y);
+        shape.graphics.setStrokeStyle(2).beginStroke(thermometer.color).beginFill("white").drawRoundRect(-box.width/4,-box.height/4,box.width/2,50,4).endFill().endStroke();
+        shape.graphics.setStrokeStyle(2).beginStroke(thermometer.color).beginFill("white").drawCircle(0,0,box.width/2).endFill().endStroke();
+        shape.x = box.x0 + box.width/2;
+        shape.y = box.y0 + box.height/2;
+        shape.cache(-box.width/2-2,-box.height/2-2,box.width+4,56);
+        shape.rotation = -135;
+        world.addChild(shape);
+        // setup textbox for temperature recording
+        thermometer.text = new createjs.Text("99", "16px Arial", "black");
+        thermometer.text.x = box.x0 + box.width + 9;
+        thermometer.text.y = box.y0;// + box.height/2;
+        world.addChild(thermometer.text);
+      }
+
+      stage.addChild(world);
+    } else {
+      world.shape.graphics.clear();
+      world.heatShape.graphics.clear();
+    }
+
+    world.voxels = [];
+    // first assume everything is air
+    for (var x = worldSpecs.min_x; x <= worldSpecs.max_x; x++){
+      for (var y = worldSpecs.min_y; y <= worldSpecs.max_y; y++){
+        world.voxels.push({x:x, y:y, temperature:worldObjects.air.temperature, conductivity:worldObjects.air.conductivity, type:"air", update:true, color:worldObjects.air.color});
+        var box = voxelToPixels(x, y);
+        if (worldObjects.air.temperature != null){
+          world.shape.graphics.beginFill(worldObjects.air.color).drawRect(box.x0, box.y0, box.width, box.height).endFill();
+        }
+      }
+    }
+
+    for (var i = 0; i < worldObjects.cups.length; i++){
+      var cup = worldObjects.cups[i];
+      // only draw if the material is selected
+      if (cup.material != null && cup.material.length > 0){
+        // now update for cup materials (this will be a bit redundant because we are updating the liquid area twice, but not too bad)
+        for (x = cup.x; x < cup.x+cup.width; x++){
+          for (y = cup.y; y < cup.y+cup.height; y++){
+            var voxel = getVoxel(x, y);
+            voxel.temperature = worldObjects.air.temperature; //cup.material_temperature;
+            voxel.conductivity = worldObjects.materials[cup.material].conductivity;
+            voxel.color = worldObjects.materials[cup.material].color;
+            voxel.type = "material-" + i;
+            var box = voxelToPixels(x, y);
+            world.shape.graphics.beginFill(voxel.color).drawRect(box.x0, box.y0, box.width, box.height).endFill();
+          }
+        }
+        if (cup.liquid_temperature != null){
+          // now update for liquid
+          for (x = cup.x+cup.thickness; x < cup.x+cup.width-cup.thickness; x++){
+            for (y = cup.y+cup.thickness; y < cup.y+cup.height-cup.thickness; y++){
+              var voxel = getVoxel(x, y);
+              voxel.temperature = cup.liquid_temperature;
+              voxel.conductivity = worldObjects.liquids[cup.liquid].conductivity;
+              voxel.color = worldObjects.liquids[cup.liquid].color;
+              voxel.type = "liquid-"+i;
+              var box = voxelToPixels(x, y);
+              world.shape.graphics.beginFill(voxel.color).drawRect(box.x0, box.y0, box.width, box.height).endFill();
+            }
+          }
+        }
+      }
+    }
+    world.shape.cache(0, 0, worldSpecs.width_px, worldSpecs.height_px);
+
+    // draw outlines to match cup color
+
+    for (var i = 0; i < worldObjects.cups.length; i++){
+      var cup = worldObjects.cups[i];
+      var topleft = voxelToPixels(cup.x, cup.y+cup.height-1);
+      var outline = cup.outline;
+      var color = cup.material != null && cup.material.length > 0 ? (worldObjects.materials[cup.material].stroke_color != null ? worldObjects.materials[cup.material].stroke_color: worldObjects.materials[cup.material].color) : "#444444";
+      outline.graphics.clear().setStrokeStyle(1).beginStroke(color).drawRect(topleft.x0, topleft.y0, cup.width*worldSpecs.voxel_width, cup.height*worldSpecs.voxel_height).endStroke();
+
+      var itopleft = voxelToPixels(cup.x+cup.thickness, cup.y+cup.height-1-1*cup.thickness);
+      //outline = new createjs.Shape();
+      outline.graphics.setStrokeStyle(1).beginStroke(color).drawRect(itopleft.x0, itopleft.y0, (cup.width-2*cup.thickness)*worldSpecs.voxel_width,  (cup.height-2*cup.thickness)*worldSpecs.voxel_height).endStroke();
+      outline.cache(topleft.x0-1, topleft.y0-1, cup.width*worldSpecs.voxel_width+2, cup.height*worldSpecs.voxel_height+2);
+      //outline.cache(topleft.x0-1, topleft.y0-1, (cup.width-2*cup.thickness)*worldSpecs.voxel_width+2,  (cup.height-2*cup.thickness)*worldSpecs.voxel_height+2);
+      //world.addChild(outline);
+    }
+
+    // update temperature on thermometers
+    for (var i = 0; i < worldObjects.thermometers.length; i++){
+      var thermometer = worldObjects.thermometers[i];
+      var voxel = getVoxel(thermometer.x, thermometer.y);
+      thermometer.text.text = voxel.temperature == null ? "" : voxel.temperature + " °C";
+    }
+
+    world.isRunning = false;
+    world.isPaused = false;
+    // set default button values
+    $("#button-run").button('option', 'label', 'Run');
+    $("#button-restart").button('option', 'label', 'Restart');
+    stage.needs_to_update = true;
+    return world;
+  }
+
+  /** This function applies updates temperatures based on neighbors (above, below, left, right)
+  **  To make it function like NetLogo we need to shuffle the voxels
+  */
+  function updateTemperatures (){
+    var indexArray = shuffledIndexArray(world.voxels.length);
+    for (var i = 0; i < world.voxels.length; i++){
+      var index = indexArray[i];
+      var voxel = world.voxels[index];
+      var x = voxel.x;
+      var y = voxel.y;
+      //if (x == worldObjects.thermometers[1].x && y == worldObjects.thermometers[1].y){
+      //  debugger;
+      //}
+      var my_temp = voxel.temperature;
+      var my_con = voxel.conductivity;
+      var q = 0 // this will be the net flow of energy
+      var neighborIndices = [[x, y-1], [x+1,y],[x, y+1],[x-1, y]];
+      for (var j = 0; j < neighborIndices.length; j++){
+        var neighbor = getVoxel(neighborIndices[j][0], neighborIndices[j][1]);
+        if (neighbor != null){
+          var con = Math.min(neighbor.conductivity, my_con);
+          q += worldSpecs.flow_speed * con / createjs.Ticker.framerate * (neighbor.temperature - my_temp) / worldSpecs.temperature_range;
+          //q += con / 30 * (neighbor.temperature - my_temp) / worldSpecs.temperature_range;
+        }
+      }
+
+      voxel.temperature += worldSpecs.flow_speed * q;
+      if (voxel.temperature < worldSpecs.temperature_min){
+        voxel.temperature = worldSpecs.temperature_min;
+      } else if (voxel.temperature > worldSpecs.temperature_max){
+        voxel.temperature = worldSpecs.temperature_max;
+      }
+      if (my_temp != voxel.temperature){
+        voxel.update = true;
+      }
+    }
+  }
+    function shuffledIndexArray(n){
+      var a = Array.apply(null, {length:n}).map(Number.call, Number);
+      var j, x, i;
+        for (i = a.length; i; i--) {
+          j = Math.floor(Math.random() * i);
+          x = a[i - 1];
+          a[i - 1] = a[j];
+          a[j] = x;
+        }
+        return a;
+    }
+
+  function recordTemperatures(){
+    var seriesCount = 0;
+    for (var i = 0; i < worldObjects.thermometers.length; i++){
+      var thermometer = worldObjects.thermometers[i];
+      var voxel = getVoxel(thermometer.x, thermometer.y);
+      thermometer.temperature = voxel.temperature;
+      thermometer.text.text = voxel.temperature.toFixed(1) + " °C";
+      if (thermometer.saveSeries != null && thermometer.saveSeries &&
+        (world.ticks % 30 == 0)){
+        worldSpecs.series[seriesCount].data.push({x:world.ticks / worldSpecs.max_ticks * 60, y:voxel.temperature});
+        //worldSpecs.series[seriesCount].data.push([world.ticks, voxel.temperature]);
+        seriesCount++;
+      }
+      //console.log("Thermometer at", thermometer.x, thermometer.y, ":",voxel.temperature, "(",voxel.type,")");
+    }
+  }
+
+  function startTrial(){
+    // reset thermometers
+    var seriesCount = 0;
+    worldSpecs.series = [];
+    worldSpecs.timestamp = new Date();
+    for (var i = 0; i < worldObjects.thermometers.length; i++){
+      var thermometer = worldObjects.thermometers[i];
+      var voxel = getVoxel(thermometer.x, thermometer.y);
+      thermometer.text.text = "";
+      // if a 'series' field exists set up to save data
+      if (thermometer.saveSeries != null && thermometer.saveSeries){
+        var series = {data:[]};
+        // label should be material-TempBev-TempAir
+        var mat = $("#select-material option:selected").text();
+        var bev = /^([a-zA-Z]+)/.exec($("#select-bevTemp option:selected").text())[1];
+        var air = /^([a-zA-Z]+)/.exec($("#select-airTemp option:selected").text())[1];
+        var name = mat +"-"+bev+"Bev"+"-"+air+"Air";
+        if (seriesCount > 0){
+          name = name + "-" + seriesCount;
+        }
+        series.name = name;
+        series.color = worldObjects.materials[mat].stroke_color != null ? worldObjects.materials[mat].stroke_color : worldObjects.materials[mat].color ;
+        series.id = new Date().getTime();
+        worldSpecs.series.push(series);
+        seriesCount++;
+        worldSpecs.trialId = new Date().getTime()
+      }
+    }
+    world.isRunning = true;
+    world.ticks = 0;
+  }
+
+  /** Will initialize (reset) world. If in a trial will save state to Wise5*/
+  function endTrial(){
+    if (world.isRunning){
+      var endtime = new Date();
+      console.log("Time Running", Math.abs(endtime.getTime() - worldSpecs.timestamp.getTime()));
+      //console.log(worldObjects.thermometers);
+      var state = {};
+        state.messageType = "studentWork";
+        state.isAutoSave = false;
+        state.isSubmit = false;
+        state.studentData = getWorldState();
+        WISE_saveState(state);
+    }
+    initWorld();
+  }
+
+  function redraw(){
+    if (world != null && world.isRunning && !world.isPaused){
+        world.heatShape.graphics.clear();
+      // redraw all empty voxels (that need an update) according to temperature
+      for (var i = 0; i < world.voxels.length; i++){
+        var voxel = world.voxels[i];
+        var hsl = tempToHSL(voxel.temperature);
+        voxel.heat_color = "hsla("+hsl.h+", "+hsl.s+", "+hsl.l+", 1.0)";
+        voxel.stroke_color = "hsla("+hsl.h+", 50%, "+hsl.l+", 1.0)";
+        var box = voxelToPixels(voxel.x, voxel.y);
+        world.heatShape.graphics.setStrokeStyle(0.5).beginStroke(voxel.stroke_color).beginFill(voxel.heat_color).drawRect(box.x0, box.y0, box.width, box.height).endFill().endStroke();
+        voxel.update = false;
+      }
+    }
+  }
+
+  /** We normally progress on each call of tick, but with the speed multiplier we will only do so
+  on some ticks
+  Basically, for example, if we set the speed multiplier 0.4, than on 4 out of 10 ticks we should advance
+  and the rest of the time we should not do anything.
+  */
+  function tick() {
+    if (world != null && world.isRunning && !world.isPaused){
+      if (worldSpecs.tickArray.length == 0){
+        worldSpecs.tickArray = randomizedArrayOfTen(worldSpecs.speedMult);
+      }
+      var canTick = worldSpecs.tickArray.splice(0, 1)[0];
+      if (canTick == 1){
+        updateTemperatures();
+        recordTemperatures();
+        world.ticks ++;
+        stage.needs_to_update = world.ticks % 2 == 0;
+        if (world.ticks >= worldSpecs.max_ticks){
+          endTrial();
+        } else {
+          var state = {};
+          state.messageType = "studentDataChanged";
+          state.isAutoSave = false;
+          state.isSubmit = false;
+          state.studentData = getWorldState();
+          WISE_ontick(state);
+        }
+      }
+    }
+    if (stage != null && stage.needs_to_update){
+      redraw();
+      stage.update();
+      stage.needs_to_update = false;
+    }
+  }
+
+  ////////////////// UTILITY FUNCTIONS
+  /* When given the x and y coordinate of a voxel, returns the bounding box information for the canvas
+     {x0, y0, x1, y1, width, height}
+    */
+  function voxelToPixels(x, y){
+    if (x >= worldSpecs.min_x && x <= worldSpecs.max_x && y >= worldSpecs.min_y && y <= worldSpecs.max_y){
+      var box = {
+        x0: worldSpecs.width_px / 2 + x * worldSpecs.voxel_width - worldSpecs.voxel_width/2,
+        y0: worldSpecs.height_px / 2 - y * worldSpecs.voxel_height - worldSpecs.voxel_height/2,
+        x1: worldSpecs.width_px / 2 + x * worldSpecs.voxel_width + worldSpecs.voxel_width/2,
+        y1: worldSpecs.height_px / 2 - y * worldSpecs.voxel_height + worldSpecs.voxel_height/2,
+        width: worldSpecs.voxel_width,
+        height: worldSpecs.voxel_height
+      };
+      return box;
+    } else {
+      return null;
+    }
+  }
 
 
-	// world objects include thermometers and cups
-	// thermometers should have structure: x, y (voxel at which temp is collected), color
-	// if a thermometer has a 'series' field, will save data
-	// cups should have structure: x, y (top-left,top-right), width, height (voxels), thickness ( of wall in voxels)
-	var worldObjects = {
-		thermometers:[
-			{x:0, y:-1, color:"#00FF00", saveSeries:true},
-			{x:0, y:7, color:"#FF00DD"}
-		],
-		cups: [
-			{x: -6, y: -8, width: 13, height: 13, thickness:3, liquid:"Water", material:"", liquid_temperature:null, material_temperature:25}
-		],
-		air: {
-			temperature:null,
-			conductivity:100,
-			color:"#FFEECC"
-		},
-		liquids: {
-			"Water":{
-				conductivity:100,
-				color:"rgba(220,220,250,0.7)"
-			}
-		},
-		materials: {
-			"Aluminum":{
-				conductivity: 200,
-				color:"#AAAAAA",
-				stroke_color:"#888888"
-			},
-			"Wood":{
-				conductivity: 10,
-				color:"#996622",
-				stroke_color:"#774400"
-			},
-			"Styrofoam":{
-				conductivity: 1,
-				color:"#FFFFFF",
-				stroke_color:"#DDDDDD"
-			},
-			"Clay":{
-				conductivity: 20,
-				color:"#FF8844",
-				stroke_color:"#DD6622"
-			},
-			"Glass":{
-				conductivity: 40,
-				color:"rgba(150,200,180,0.5)",
-				stroke_color:"rgba(100,150,130,0.8)"
-			},
-			"Plastic":{
-				conductivity: 20,
-				color:"#FF33AA",
-				stroke_color:"#DD1188"
-			}
-		}
+  /** Given the x, y coordinates of the voxel, retrieve the appropriate voxel from the array */
+  function getVoxelIndex (vx, vy){
+    var xdiff = vx - worldSpecs.min_x;
+    var ydiff = vy - worldSpecs.min_y;
+    return worldSpecs.height * xdiff + ydiff;
+  }
+  function getVoxel(vx, vy){
+    return world != null ? world.voxels[getVoxelIndex(vx, vy)] : null;
+  }
+  function tempToHSL(temperature){
+    var temp_frac = (temperature - worldSpecs.temperature_min) / worldSpecs.temperature_range;
+    //var h = 120 - temp_frac * 120;
+    //if (h > 90) h = (h-90)+180;
+    var hsl = {};
+    if (temp_frac < 0.5){
+      hsl.h = 225;
+      hsl.s = "100%";
+      hsl.l = (0.5 + temp_frac) * 100 + "%";
+    } else {
+      hsl.h = 0;
+      hsl.s = "100%";
+      hsl.l = (0.5 + (1 - temp_frac)) * 100 + "%";
+    }
+    return hsl;
+  }
 
+  function randomizedArrayOfTen(numOnes){
+    var arr1 = Array(numOnes).fill(1);
+    var arr0 = Array(10-numOnes).fill(0);
+    var arr = arr1.concat(arr0);
+    return fisherYates(arr);
+  }
+  function fisherYates( array ){
+     var count = array.length, randomnumber, temp;
+     while( count ){
+      randomnumber = Math.random() * count-- | 0;
+      temp = array[count];
+      array[count] = array[randomnumber];
+      array[randomnumber] = temp
+    }
+    return array;
+  }
+  /////////////////////////////////////////////// BUTTON INTERACTIONS ///////////////////////////////////////////////
 
-	};
+  function run(){
+    if (world != null){
+      if (!world.isRunning){
+        // make sure everything is set
+        if (worldObjects.cups[0].material != null && worldObjects.cups[0].material.length > 0 && worldObjects.cups[0].liquid_temperature != null && worldObjects.cups[0].material_temperature != null && worldObjects.air.temperature != null){
+          $("#button-run").button('option', 'label', 'Pause');
+          startTrial();
+        } else {
+          $("#dialog").dialog("open");
+        }
+      } else {
+        if (world.isPaused){
+          world.isPaused = false;
+          $("#button-run").button('option', 'label', 'Pause');
+        } else {
+          world.isPaused = true;
+          $("#button-run").button('option', 'label', 'Run');
+        }
+      }
+    }
+  }
 
-	var stage, world = null;
+  function restart(){
+    if (world != null && world.isRunning){
+      endTrial();
+    }
+  }
 
-	function init(){
-		// initialize values
-		worldSpecs.width_px = $("#canvas").width() - 100; // use 100 for the color map
-		worldSpecs.height_px = $("#canvas").height()
-		worldSpecs.width = worldSpecs.max_x - worldSpecs.min_x + 1;
-		worldSpecs.height = worldSpecs.max_y - worldSpecs.min_y + 1;
-		worldSpecs.voxel_width = worldSpecs.width_px / (worldSpecs.width);
-		worldSpecs.voxel_height = worldSpecs.height_px / (worldSpecs.height);
-		worldSpecs.temperature_range = worldSpecs.temperature_max - worldSpecs.temperature_min;
-		worldSpecs.speedMult = 5;
-		worldSpecs.tickArray = randomizedArrayOfTen(worldSpecs.speedMult);
-		// setup ui elements
-		$("#slider-speed").slider({
-			orientation: "horizontal",
-			range: "min",
-			min: 0,
-			max: 10,
-			value: 5,
-			step: 1,
-			change: function (event, ui){
-				var key = event.target.id.replace("slider-","");
-				worldSpecs.speedMult = ui.value;
-				worldSpecs.tickArray = randomizedArrayOfTen(worldSpecs.speedMult);
-				WISE_onchange('slide-change-'+key, event,ui);
-			}
-		});
-		$("#button-run").button();
-		$("#button-restart").button();
-		for (var key in worldObjects.materials){
-			$("#select-material").append($('<option>', {id:"select-"+key, text:key}));
-		}
-		$("#select-material").selectmenu({
-			change: function( event, ui ) {
-				//console.log(event, ui)
-				if (ui.item.index > 0){
-					worldObjects.cups[0].material = ui.item.label;
-				} else {
-					// first index is just instructions
-					orldObjects.cups[0].material = "";
-				}
-				WISE_onchange('select-material-changed',event, ui);
-				endTrial();
-			},
-			width:160
-		});
+  function getWorldState(){
+    var state = {
+      "ticks": world.ticks,
+      "material0": worldObjects.cups[0].material,
+      "material0_initial_temperature": worldObjects.cups[0].material_temperature,
+      "liquid_initial_temperature": worldObjects.cups[0].liquid_initial_temperature,
+      "air_initial_temperature":worldObjects.air.temperature,
+      "trial": {
+          "id": worldSpecs.trialId,
+          "name": worldSpecs.series[0].name,
+          "series": worldSpecs.series
+       }
+    };
 
-		$("#select-bevTemp").selectmenu({
-			change: function( event, ui ) {
-				//console.log(event, ui)
-				var regexp = /([0-9]+)/;
-				if (ui.item.index > 0 && regexp.exec(ui.item.label) != null){
-					worldObjects.cups[0].liquid_temperature = parseInt(regexp.exec(ui.item.label)[1]);
-				} else {
-					worldObjects.cups[0].liquid_temperature = null;
-				}
-				WISE_onchange('select-bevTemp-changed',event, ui);
-				endTrial();
-			},
-			width:160
-		});
-
-		$("#select-airTemp").selectmenu({
-			change: function( event, ui ) {
-				//console.log(event, ui)
-				var regexp = /([0-9]+)/;
-				if (ui.item.index > 0 && regexp.exec(ui.item.label) != null){
-					worldObjects.air.temperature = parseInt(regexp.exec(ui.item.label)[1]);
-				} else {
-					worldObjects.air.temperature = null;
-				}
-				WISE_onchange('select-airTemp-changed',event, ui);
-				endTrial();
-			},
-			width:160
-		});
-
-		$( "#dialog" ).dialog({ autoOpen: false, position:{my:"left bottom", at:"left bottom", of: "#canvas"} });
-
-		// setup easeljs
-		var canvas = $("#canvas");
-		stage = new createjs.Stage(canvas[0]);
-		initWorld();
-		// draw a colormap on the right of the world
-		var colorMap = new createjs.Container();
-		var text = new createjs.Text("Temperature \nColors", "16px Arial", "#008833");
-		text.x = 0;
-		text.y = 0;
-		colorMap.addChild(text);
-		colorMap.shape = new createjs.Shape();
-		colorMap.addChild(colorMap.shape);
-		colorMap.shape.height_px = 200;
-		colorMap.shape.width_px = 20;
-		for (var t = worldSpecs.temperature_max; t >= worldSpecs.temperature_min; t--){
-			var hsl = tempToHSL(t);
-			var col = "hsl(" + hsl.h + "," + hsl.s + "," + hsl.l + ")"
-			var height_px = colorMap.shape.height_px / (worldSpecs.temperature_range+1)
-			colorMap.shape.graphics.beginFill(col).drawRect(20, 60 + (worldSpecs.temperature_max - t) * height_px, colorMap.shape.width_px, height_px).endFill();
-
-			if (t % 20 == 0){
-				var text = new createjs.Text(t+ " °C", "14px Arial", "#008833");
-				text.x = 20 + colorMap.shape.width_px + 4;
-				text.y = 60 + (worldSpecs.temperature_max - t) * height_px - 6;
-				colorMap.addChild(text);
-			}
-		}
-		colorMap.shape.cache(20, 60, colorMap.shape.width_px, colorMap.shape.height_px);
-		colorMap.x = worldSpecs.width_px + 5;
-		colorMap.y = 5;
-		stage.addChild(colorMap);
-
-		createjs.Ticker.framerate = 120;
-		createjs.Ticker.addEventListener("tick", tick);
-
-		if (isHideCanvas()) {
-			$("#canvas").hide();
-		}
-	}
-
-	/** Function returns a blank world where each voxel is set to initial conditions */
-	function initWorld(){
-		if (world == null){
-			world = new createjs.Container();
-			world.shape = new createjs.Shape();
-			world.addChild(world.shape);
-			world.heatShape = new createjs.Shape();
-			world.addChild(world.heatShape);
-
-			//setup outlines
-			for (var i = 0; i < worldObjects.cups.length; i++){
-				var cup = worldObjects.cups[i];
-				var topleft = voxelToPixels(cup.x, cup.y+cup.height-1);
-				var outline = cup.outline = new createjs.Shape();
-				world.addChild(outline);
-				var text = new createjs.Text("Cup", "12px Arial", "black");
-				text.x = topleft.x0 + cup.width*worldSpecs.voxel_width/2-10;
-				text.y = topleft.y0 + 5;// + box.height/2;
-				world.addChild(text);
-
-				topleft = voxelToPixels(cup.x+cup.thickness, cup.y+cup.height-1-1*cup.thickness);
-				text = new createjs.Text("Liquid", "12px Arial", "black");
-				text.x = topleft.x0 + (cup.width-2*cup.thickness)*worldSpecs.voxel_width/2-12;
-				text.y = topleft.y0 + (cup.height-1*cup.thickness)*worldSpecs.voxel_height/2-2;// + box.height/2;
-				world.addChild(text);
-			}
-
-			// draw thermometers
-			for (var i = 0; i < worldObjects.thermometers.length; i++){
-				var thermometer = worldObjects.thermometers[i];
-				var shape = new createjs.Shape();
-				var box = voxelToPixels(thermometer.x, thermometer.y);
-				shape.graphics.setStrokeStyle(2).beginStroke(thermometer.color).beginFill("white").drawRoundRect(-box.width/4,-box.height/4,box.width/2,50,4).endFill().endStroke();
-				shape.graphics.setStrokeStyle(2).beginStroke(thermometer.color).beginFill("white").drawCircle(0,0,box.width/2).endFill().endStroke();
-				shape.x = box.x0 + box.width/2;
-				shape.y = box.y0 + box.height/2;
-				shape.cache(-box.width/2-2,-box.height/2-2,box.width+4,56);
-				shape.rotation = -135;
-				world.addChild(shape);
-				// setup textbox for temperature recording
-				thermometer.text = new createjs.Text("99", "16px Arial", "black");
-				thermometer.text.x = box.x0 + box.width + 9;
-				thermometer.text.y = box.y0;// + box.height/2;
-				world.addChild(thermometer.text);
-			}
-
-			stage.addChild(world);
-		} else {
-			world.shape.graphics.clear();
-			world.heatShape.graphics.clear();
-		}
-
-		world.voxels = [];
-		// first assume everything is air
-		for (var x = worldSpecs.min_x; x <= worldSpecs.max_x; x++){
-			for (var y = worldSpecs.min_y; y <= worldSpecs.max_y; y++){
-				world.voxels.push({x:x, y:y, temperature:worldObjects.air.temperature, conductivity:worldObjects.air.conductivity, type:"air", update:true, color:worldObjects.air.color});
-				var box = voxelToPixels(x, y);
-				if (worldObjects.air.temperature != null){
-					world.shape.graphics.beginFill(worldObjects.air.color).drawRect(box.x0, box.y0, box.width, box.height).endFill();
-				}
-			}
-		}
-
-		for (var i = 0; i < worldObjects.cups.length; i++){
-			var cup = worldObjects.cups[i];
-			// only draw if the material is selected
-			if (cup.material != null && cup.material.length > 0){
-				// now update for cup materials (this will be a bit redundant because we are updating the liquid area twice, but not too bad)
-				for (x = cup.x; x < cup.x+cup.width; x++){
-					for (y = cup.y; y < cup.y+cup.height; y++){
-						var voxel = getVoxel(x, y);
-						voxel.temperature = worldObjects.air.temperature; //cup.material_temperature;
-						voxel.conductivity = worldObjects.materials[cup.material].conductivity;
-						voxel.color = worldObjects.materials[cup.material].color;
-						voxel.type = "material-" + i;
-						var box = voxelToPixels(x, y);
-						world.shape.graphics.beginFill(voxel.color).drawRect(box.x0, box.y0, box.width, box.height).endFill();
-					}
-				}
-				if (cup.liquid_temperature != null){
-					// now update for liquid
-					for (x = cup.x+cup.thickness; x < cup.x+cup.width-cup.thickness; x++){
-						for (y = cup.y+cup.thickness; y < cup.y+cup.height-cup.thickness; y++){
-							var voxel = getVoxel(x, y);
-							voxel.temperature = cup.liquid_temperature;
-							voxel.conductivity = worldObjects.liquids[cup.liquid].conductivity;
-							voxel.color = worldObjects.liquids[cup.liquid].color;
-							voxel.type = "liquid-"+i;
-							var box = voxelToPixels(x, y);
-							world.shape.graphics.beginFill(voxel.color).drawRect(box.x0, box.y0, box.width, box.height).endFill();
-						}
-					}
-				}
-			}
-		}
-		world.shape.cache(0, 0, worldSpecs.width_px, worldSpecs.height_px);
-
-		// draw outlines to match cup color
-
-		for (var i = 0; i < worldObjects.cups.length; i++){
-			var cup = worldObjects.cups[i];
-			var topleft = voxelToPixels(cup.x, cup.y+cup.height-1);
-			var outline = cup.outline;
-			var color = cup.material != null && cup.material.length > 0 ? (worldObjects.materials[cup.material].stroke_color != null ? worldObjects.materials[cup.material].stroke_color: worldObjects.materials[cup.material].color) : "#444444";
-			outline.graphics.clear().setStrokeStyle(1).beginStroke(color).drawRect(topleft.x0, topleft.y0, cup.width*worldSpecs.voxel_width, cup.height*worldSpecs.voxel_height).endStroke();
-
-			var itopleft = voxelToPixels(cup.x+cup.thickness, cup.y+cup.height-1-1*cup.thickness);
-			//outline = new createjs.Shape();
-			outline.graphics.setStrokeStyle(1).beginStroke(color).drawRect(itopleft.x0, itopleft.y0, (cup.width-2*cup.thickness)*worldSpecs.voxel_width,  (cup.height-2*cup.thickness)*worldSpecs.voxel_height).endStroke();
-			outline.cache(topleft.x0-1, topleft.y0-1, cup.width*worldSpecs.voxel_width+2, cup.height*worldSpecs.voxel_height+2);
-			//outline.cache(topleft.x0-1, topleft.y0-1, (cup.width-2*cup.thickness)*worldSpecs.voxel_width+2,  (cup.height-2*cup.thickness)*worldSpecs.voxel_height+2);
-			//world.addChild(outline);
-		}
-
-		// update temperature on thermometers
-		for (var i = 0; i < worldObjects.thermometers.length; i++){
-			var thermometer = worldObjects.thermometers[i];
-			var voxel = getVoxel(thermometer.x, thermometer.y);
-			thermometer.text.text = voxel.temperature == null ? "" : voxel.temperature + " °C";
-		}
-
-		world.isRunning = false;
-		world.isPaused = false;
-		// set default button values
-		$("#button-run").button('option', 'label', 'Run');
-		$("#button-restart").button('option', 'label', 'Restart');
-
-
-		stage.needs_to_update = true;
-
-		return world;
-	}
-
-	/** This function applies updates temperatures based on neighbors (above, below, left, right)
-	**  To make it function like NetLogo we need to shuffle the voxels
-	*/
-	function updateTemperatures (){
-		var indexArray = shuffledIndexArray(world.voxels.length);
-		for (var i = 0; i < world.voxels.length; i++){
-			var index = indexArray[i];
-			var voxel = world.voxels[index];
-			var x = voxel.x;
-			var y = voxel.y;
-			//if (x == worldObjects.thermometers[1].x && y == worldObjects.thermometers[1].y){
-			//	debugger;
-			//}
-			var my_temp = voxel.temperature;
-			var my_con = voxel.conductivity;
-			var q = 0 // this will be the net flow of energy
-			var neighborIndices = [[x, y-1], [x+1,y],[x, y+1],[x-1, y]];
-			for (var j = 0; j < neighborIndices.length; j++){
-				var neighbor = getVoxel(neighborIndices[j][0], neighborIndices[j][1]);
-				if (neighbor != null){
-					var con = Math.min(neighbor.conductivity, my_con);
-					q += worldSpecs.flow_speed * con / createjs.Ticker.framerate * (neighbor.temperature - my_temp) / worldSpecs.temperature_range;
-					//q += con / 30 * (neighbor.temperature - my_temp) / worldSpecs.temperature_range;
-				}
-			}
-
-			voxel.temperature += worldSpecs.flow_speed * q;
-			if (voxel.temperature < worldSpecs.temperature_min){
-				voxel.temperature = worldSpecs.temperature_min;
-			} else if (voxel.temperature > worldSpecs.temperature_max){
-				voxel.temperature = worldSpecs.temperature_max;
-			}
-			if (my_temp != voxel.temperature){
-				voxel.update = true;
-			}
-		}
-	}
-		function shuffledIndexArray(n){
-			var a = Array.apply(null, {length:n}).map(Number.call, Number);
-			var j, x, i;
-		    for (i = a.length; i; i--) {
-		        j = Math.floor(Math.random() * i);
-		        x = a[i - 1];
-		        a[i - 1] = a[j];
-		        a[j] = x;
-		    }
-		    return a;
-		}
-
-	function recordTemperatures(){
-		var seriesCount = 0;
-		for (var i = 0; i < worldObjects.thermometers.length; i++){
-			var thermometer = worldObjects.thermometers[i];
-			var voxel = getVoxel(thermometer.x, thermometer.y);
-			thermometer.temperature = voxel.temperature;
-			thermometer.text.text = voxel.temperature.toFixed(1) + " °C";
-			if (thermometer.saveSeries != null && thermometer.saveSeries &&
-				(world.ticks % 30 == 0)){
-				worldSpecs.series[seriesCount].data.push({x:world.ticks / worldSpecs.max_ticks * 60, y:voxel.temperature});
-				//worldSpecs.series[seriesCount].data.push([world.ticks, voxel.temperature]);
-				seriesCount++;
-			}
-			//console.log("Thermometer at", thermometer.x, thermometer.y, ":",voxel.temperature, "(",voxel.type,")");
-		}
-	}
-
-	function startTrial(){
-		// reset thermometers
-		var seriesCount = 0;
-		worldSpecs.series = [];
-		worldSpecs.timestamp = new Date();
-		for (var i = 0; i < worldObjects.thermometers.length; i++){
-			var thermometer = worldObjects.thermometers[i];
-			var voxel = getVoxel(thermometer.x, thermometer.y);
-			thermometer.text.text = "";
-			// if a 'series' field exists set up to save data
-			if (thermometer.saveSeries != null && thermometer.saveSeries){
-				var series = {data:[]};
-				// label should be material-TempBev-TempAir
-				var mat = $("#select-material option:selected").text();
-				var bev = /^([a-zA-Z]+)/.exec($("#select-bevTemp option:selected").text())[1];
-				var air = /^([a-zA-Z]+)/.exec($("#select-airTemp option:selected").text())[1];
-				var name = mat +"-"+bev+"Bev"+"-"+air+"Air";
-				if (seriesCount > 0){
-					name = name + "-" + seriesCount;
-				}
-				series.name = name;
-				series.color = worldObjects.materials[mat].stroke_color != null ? worldObjects.materials[mat].stroke_color : worldObjects.materials[mat].color ;
-				series.id = new Date().getTime();
-				worldSpecs.series.push(series);
-				seriesCount++;
-				worldSpecs.trialId = new Date().getTime()
-			}
-		}
-		world.isRunning = true;
-		world.ticks = 0;
-	}
-
-	/** Will initialize (reset) world. If in a trial will save state to Wise5*/
-	function endTrial(){
-		if (world.isRunning){
-			var endtime = new Date();
-			console.log("Time Running", Math.abs(endtime.getTime() - worldSpecs.timestamp.getTime()));
-			//console.log(worldObjects.thermometers);
-			var state = {};
-		    state.messageType = "studentWork";
-		    state.isAutoSave = false;
-		    state.isSubmit = false;
-		    state.studentData = getWorldState();
-		    WISE_saveState(state);
-		}
-		initWorld();
-	}
-
-	function redraw(){
-		if (world != null && world.isRunning && !world.isPaused){
-		    world.heatShape.graphics.clear();
-			// redraw all empty voxels (that need an update) according to temperature
-			for (var i = 0; i < world.voxels.length; i++){
-				var voxel = world.voxels[i];
-				var hsl = tempToHSL(voxel.temperature);
-				voxel.heat_color = "hsla("+hsl.h+", "+hsl.s+", "+hsl.l+", 1.0)";
-				voxel.stroke_color = "hsla("+hsl.h+", 50%, "+hsl.l+", 1.0)";
-				var box = voxelToPixels(voxel.x, voxel.y);
-				world.heatShape.graphics.setStrokeStyle(0.5).beginStroke(voxel.stroke_color).beginFill(voxel.heat_color).drawRect(box.x0, box.y0, box.width, box.height).endFill().endStroke();
-				voxel.update = false;
-			}
-		}
-	}
-
-	/** We normally progress on each call of tick, but with the speed multiplier we will only do so
-	on some ticks
-	Basically, for example, if we set the speed multiplier 0.4, than on 4 out of 10 ticks we should advance
-	and the rest of the time we should not do anything.
-	*/
-	function tick() {
-	    if (world != null && world.isRunning && !world.isPaused){
-	    	if (worldSpecs.tickArray.length == 0){
-	    		worldSpecs.tickArray = randomizedArrayOfTen(worldSpecs.speedMult);
-	    	}
-	    	var canTick = worldSpecs.tickArray.splice(0, 1)[0];
-	    	if (canTick == 1){
-				updateTemperatures();
-				recordTemperatures();
-				world.ticks ++;
-				stage.needs_to_update = world.ticks % 2 == 0;
-				if (world.ticks >= worldSpecs.max_ticks){
-					endTrial();
-				} else {
-					var state = {};
-				    state.messageType = "studentDataChanged";
-				    state.isAutoSave = false;
-				    state.isSubmit = false;
-				    state.studentData = getWorldState();
-				    WISE_ontick(state);
-				}
-			}
-		}
-		if (stage != null && stage.needs_to_update){
-			redraw();
-			stage.update();
-			stage.needs_to_update = false;
-		}
-	}
-
-	////////////////// UTILITY FUNCTIONS
-	/* When given the x and y coordinate of a voxel, returns the bounding box information for the canvas
-	   {x0, y0, x1, y1, width, height}
-	  */
-	function voxelToPixels(x, y){
-		if (x >= worldSpecs.min_x && x <= worldSpecs.max_x && y >= worldSpecs.min_y && y <= worldSpecs.max_y){
-			var box = {
-				x0: worldSpecs.width_px / 2 + x * worldSpecs.voxel_width - worldSpecs.voxel_width/2,
-				y0: worldSpecs.height_px / 2 - y * worldSpecs.voxel_height - worldSpecs.voxel_height/2,
-				x1: worldSpecs.width_px / 2 + x * worldSpecs.voxel_width + worldSpecs.voxel_width/2,
-				y1: worldSpecs.height_px / 2 - y * worldSpecs.voxel_height + worldSpecs.voxel_height/2,
-				width: worldSpecs.voxel_width,
-				height: worldSpecs.voxel_height
-			};
-			return box;
-		} else {
-			return null;
-		}
-	}
-
-
-	/** Given the x, y coordinates of the voxel, retrieve the appropriate voxel from the array */
-	function getVoxelIndex (vx, vy){
-		var xdiff = vx - worldSpecs.min_x;
-		var ydiff = vy - worldSpecs.min_y;
-		return worldSpecs.height * xdiff + ydiff;
-	}
-	function getVoxel(vx, vy){
-		return world != null ? world.voxels[getVoxelIndex(vx, vy)] : null;
-	}
-	function tempToHSL(temperature){
-		var temp_frac = (temperature - worldSpecs.temperature_min) / worldSpecs.temperature_range;
-		//var h = 120 - temp_frac * 120;
-		//if (h > 90) h = (h-90)+180;
-		var hsl = {};
-		if (temp_frac < 0.5){
-			hsl.h = 225;
-			hsl.s = "100%";
-			hsl.l = (0.5 + temp_frac) * 100 + "%";
-		} else {
-			hsl.h = 0;
-			hsl.s = "100%";
-			hsl.l = (0.5 + (1 - temp_frac)) * 100 + "%";
-		}
-		return hsl;
-	}
-
-	function randomizedArrayOfTen(numOnes){
-		var arr1 = Array(numOnes).fill(1);
-		var arr0 = Array(10-numOnes).fill(0);
-		var arr = arr1.concat(arr0);
-		return fisherYates(arr);
-	}
-	function fisherYates( array ){
-	 	var count = array.length, randomnumber, temp;
-	 	while( count ){
-		  randomnumber = Math.random() * count-- | 0;
-		  temp = array[count];
-		  array[count] = array[randomnumber];
-		  array[randomnumber] = temp
-		}
-		return array;
-	}
-	/////////////////////////////////////////////// BUTTON INTERACTIONS ///////////////////////////////////////////////
-
-	function run(){
-		if (world != null){
-			if (!world.isRunning){
-				// make sure everything is set
-				if (worldObjects.cups[0].material != null && worldObjects.cups[0].material.length > 0 && worldObjects.cups[0].liquid_temperature != null && worldObjects.cups[0].material_temperature != null && worldObjects.air.temperature != null){
-					$("#button-run").button('option', 'label', 'Pause');
-					startTrial();
-				} else {
-					$("#dialog").dialog("open");
-				}
-			} else {
-				if (world.isPaused){
-					world.isPaused = false;
-					$("#button-run").button('option', 'label', 'Pause');
-				} else {
-					world.isPaused = true;
-					$("#button-run").button('option', 'label', 'Run');
-				}
-			}
-		}
-	}
-
-	function restart(){
-		if (world != null && world.isRunning){
-			endTrial();
-		}
-	}
-
-	function getWorldState(){
-		var state = {
-			"ticks": world.ticks,
-			"material0": worldObjects.cups[0].material,
-			"material0_initial_temperature": worldObjects.cups[0].material_temperature,
-			"liquid_initial_temperature": worldObjects.cups[0].liquid_initial_temperature,
-			"air_initial_temperature":worldObjects.air.temperature,
-			"trial": {
-			    "id": worldSpecs.trialId,
-			    "name": worldSpecs.series[0].name,
-			    "series": worldSpecs.series
-			 }
-		};
-
-		for (var i = 0; i < worldObjects.thermometers.length; i++){
-			var thermometer = worldObjects.thermometers[i];
-			state['thermometer'+i+"-temperature"] = thermometer.temperature.toFixed(1);
-		}
-		//console.log(state['trial'].series[0].data.length);
+    for (var i = 0; i < worldObjects.thermometers.length; i++){
+      var thermometer = worldObjects.thermometers[i];
+      state['thermometer'+i+"-temperature"] = thermometer.temperature.toFixed(1);
+    }
+    //console.log(state['trial'].series[0].data.length);
         //state.trials = worldSpecs.series;
 
-		return state;
-	}
+    return state;
+  }
 
-	function WISE_onclick(fun, event){
-		if (typeof window[fun] !== "undefined") window[fun](event);
+  function WISE_onclick(fun, event){
+    if (typeof window[fun] !== "undefined") window[fun](event);
 
-		if (parent != null && parent.postMessage != null){
-			event.timestamp = new Date().getTime();
-			try {
-      			parent.postMessage(event, "*");
-      		} catch(err){console.log("not posted");}
-		}
-	}
+    if (parent != null && parent.postMessage != null){
+      event.timestamp = new Date().getTime();
+      try {
+        parent.postMessage(event, "*");
+      } catch(err){
+        console.log("not posted");
+      }
+    }
+  }
 
-	/** Item should have a field called "label" to get name of change */
-	function WISE_onchange(fun, event, ui){
-		if (parent != null && parent.postMessage != null){
-			event.timestamp = new Date().getTime();
-      		try {
-      			parent.postMessage(event, "*");
-      		} catch(err){console.log("not posted");}
-		}
-	}
+  /** Item should have a field called "label" to get name of change */
+  function WISE_onchange(fun, event, ui){
+    if (parent != null && parent.postMessage != null){
+      event.timestamp = new Date().getTime();
+      try {
+        parent.postMessage(event, "*");
+      } catch(err){
+        console.log("not posted");
+      }
+    }
+  }
 
-	function WISE_saveState(componentState) {
-		if (parent != null && parent.postMessage != null){
-			componentState.timestamp = new Date().getTime();
-			try {
-	    		parent.postMessage(componentState, "*");
-	    	} catch(err){console.log("not posted");}
-	    }
-	}
+  function WISE_saveState(componentState) {
+    if (parent != null && parent.postMessage != null){
+      componentState.timestamp = new Date().getTime();
+      try {
+        parent.postMessage(componentState, "*");
+      } catch(err){console.log("not posted");}
+    }
+  }
 
-	function WISE_ontick(componentState) {
-		if (parent != null && parent.postMessage != null){
-			componentState.timestamp = new Date().getTime();
-			try {
-	    		parent.postMessage(componentState, "*");
-	    	} catch(err){console.log("not posted");}
-	    }
-	}
+  function WISE_ontick(componentState) {
+    if (parent != null && parent.postMessage != null) {
+      componentState.timestamp = new Date().getTime();
+      try {
+        parent.postMessage(componentState, "*");
+      } catch(err) {
+        console.log("not posted");
+      }
+    }
+  }
 </script>
 </head>
-
- <body onload="init()"></body>
- <span>Speed: </span>
- <div id="slider-speed" style="width:400px; margin:10px;"></div>
- <canvas id="canvas" width=310 height=310 style="background-color:#eeeeef"></canvas>
- <table><tbody><tl>
- <td>
- 	<button type="button" id="button-run" style="width:100px;" onclick="WISE_onclick('run',this);">Run</button><br/>
- 	<button type="button" id="button-restart" style="width:100px;" onclick="WISE_onclick('restart',this);">Restart</button>
- </td>
- <td>
- <div style="font-family:Arial,Helvetica,sans-serif;padding-left:10px;color:#0088BB;font-size:13pt;text-align:right">
-	 <p>Cup Material:</p>
-	 <p>Liquid Temperature:</p>
-	 <p>Air Temperature:</p>
- </div>
- </td>
- <td>
- <select name="select-material" id="select-material">
-      <option id="select-material-default" selected="selected">Select</option>
- </select>
- <br/>
-  <select name="select-bevTemp" id="select-bevTemp">
-      <option id="select-bevTemp-default" selected="selected">Select</option>
-      <option id="select-bevTemp-Hot">Hot (90 &#8451)</option>
-      <option id="select-bevTemp-Warm">Warm (40 &#8451)</option>
-      <option id="select-bevTemp-Cold">Cold (5 &#8451)</option>
- </select>
- <br/>
-  <select name="select-airTemp" id="select-airTemp">
-      <option id="select-airTemp-default" selected="selected">Select</option>
-      <option id="select-airTemp-Hot">Hot (90 &#8451)</option>
-      <option id="select-airTemp-Warm">Warm (40 &#8451)</option>
-      <option id="select-airTemp-Cold">Cold (5 &#8451)</option>
- </select>
- </td>
- </tl></tbody></table>
- <div id="dialog">Make sure to choose a material and starting temperatures for the liquid and air.</div>
+<body onload="init()">
+  <span>Speed: </span>
+  <div id="slider-speed" style="width:400px; margin:10px;"></div>
+  <canvas id="canvas" width=310 height=310 style="background-color:#eeeeef"></canvas>
+  <table>
+    <tbody>
+      <tl>
+        <td>
+           <button type="button" id="button-run" style="width:100px;" onclick="WISE_onclick('run',this);">Run</button><br/>
+           <button type="button" id="button-restart" style="width:100px;" onclick="WISE_onclick('restart',this);">Restart</button>
+        </td>
+        <td>
+          <div style="font-family:Arial,Helvetica,sans-serif;padding-left:10px;color:#0088BB;font-size:13pt;text-align:right">
+            <p>Cup Material:</p>
+            <p>Liquid Temperature:</p>
+            <p>Air Temperature:</p>
+          </div>
+        </td>
+        <td>
+          <select name="select-material" id="select-material">
+            <option id="select-material-default" selected="selected">Select</option>
+          </select>
+          <br/>
+          <select name="select-bevTemp" id="select-bevTemp">
+            <option id="select-bevTemp-default" selected="selected">Select</option>
+            <option id="select-bevTemp-Hot">Hot (90 &#8451)</option>
+            <option id="select-bevTemp-Warm">Warm (40 &#8451)</option>
+            <option id="select-bevTemp-Cold">Cold (5 &#8451)</option>
+          </select>
+          <br/>
+          <select name="select-airTemp" id="select-airTemp">
+            <option id="select-airTemp-default" selected="selected">Select</option>
+            <option id="select-airTemp-Hot">Hot (90 &#8451)</option>
+            <option id="select-airTemp-Warm">Warm (40 &#8451)</option>
+            <option id="select-airTemp-Cold">Cold (5 &#8451)</option>
+          </select>
+        </td>
+      </tl>
+    </tbody>
+  </table>
+  <div id="dialog">Make sure to choose a material and starting temperatures for the liquid and air.</div>
+</body>
 </html>
