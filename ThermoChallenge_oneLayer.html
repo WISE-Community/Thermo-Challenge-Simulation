@@ -23,29 +23,28 @@
           </td>
           <td>
             <div style="font-family:Arial,Helvetica,sans-serif;padding-left:10px;color:#0088BB;font-size:13pt;text-align:right">
-              <p>Cup Material:</p>
-              <p>Liquid Temperature:</p>
-              <p>Air Temperature:</p>
+              <div id="cupMaterial">Cup Material:
+                <select name="select-material" id="select-material">
+                  <option id="select-material-default" selected="selected">Select</option>
+                </select>
+              </div>
+              <div id="liquidTemperature">Liquid Temperature:
+                <select name="select-bevTemp" id="select-bevTemp">
+                  <option id="select-bevTemp-default" selected="selected">Select</option>
+                  <option id="select-bevTemp-Hot">Hot (90 &#8451)</option>
+                  <option id="select-bevTemp-Warm">Warm (40 &#8451)</option>
+                  <option id="select-bevTemp-Cold">Cold (5 &#8451)</option>
+                </select>
+              </div>
+              <div id="airTemperature">Air Temperature:
+                <select name="select-airTemp" id="select-airTemp">
+                  <option id="select-airTemp-default" selected="selected">Select</option>
+                  <option id="select-airTemp-Hot">Hot (90 &#8451)</option>
+                  <option id="select-airTemp-Warm">Warm (40 &#8451)</option>
+                  <option id="select-airTemp-Cold">Cold (5 &#8451)</option>
+                </select>
+              </div>
             </div>
-          </td>
-          <td>
-            <select name="select-material" id="select-material">
-              <option id="select-material-default" selected="selected">Select</option>
-            </select>
-            <br/>
-            <select name="select-bevTemp" id="select-bevTemp">
-              <option id="select-bevTemp-default" selected="selected">Select</option>
-              <option id="select-bevTemp-Hot">Hot (90 &#8451)</option>
-              <option id="select-bevTemp-Warm">Warm (40 &#8451)</option>
-              <option id="select-bevTemp-Cold">Cold (5 &#8451)</option>
-            </select>
-            <br/>
-            <select name="select-airTemp" id="select-airTemp">
-              <option id="select-airTemp-default" selected="selected">Select</option>
-              <option id="select-airTemp-Hot">Hot (90 &#8451)</option>
-              <option id="select-airTemp-Warm">Warm (40 &#8451)</option>
-              <option id="select-airTemp-Cold">Cold (5 &#8451)</option>
-            </select>
           </td>
         </tl>
       </tbody>

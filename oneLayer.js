@@ -184,9 +184,10 @@ function init() {
   createjs.Ticker.framerate = 120;
   createjs.Ticker.addEventListener("tick", tick);
 
-  if (isHideCanvas()) {
-    $("#canvas").hide();
-  }
+  initCanvasDisplay();
+  initCupControlDisplay();
+  initLiquidControlDisplay();
+  initAirControlDisplay();
 }
 
 /** Function returns a blank world where each voxel is set to initial conditions */
@@ -648,5 +649,41 @@ function WISE_ontick(componentState) {
     } catch(err) {
       console.log("not posted");
     }
+  }
+}
+
+function initCanvasDisplay() {
+  if (isHideCanvas()) {
+    $("#canvas").hide();
+  }
+}
+
+function initCupControlDisplay() {
+  if (isControlDisplayedAndEditable("cupControl")) {
+    $("#select-material").selectmenu("enable");
+  } else if (isControlDisplayedAndNotEditable("cupControl")) {
+    $("#select-material").selectmenu("disable");
+  } else if (isControlHidden("cupControl")) {
+    $("#cupMaterial").hide();
+  }
+}
+
+function initLiquidControlDisplay() {
+  if (isControlDisplayedAndEditable("liquidControl")) {
+    $("#select-bevTemp").selectmenu("enable");
+  } else if (isControlDisplayedAndNotEditable("liquidControl")) {
+    $("#select-bevTemp").selectmenu("disable");
+  } else if (isControlHidden("liquidControl")) {
+    $("#liquidTemperature").hide();
+  }
+}
+
+function initAirControlDisplay() {
+  if (isControlDisplayedAndEditable("airControl")) {
+    $("#select-airTemp").selectmenu("enable");
+  } else if (isControlDisplayedAndNotEditable("airControl")) {
+    $("#select-airTemp").selectmenu("disable");
+  } else if (isControlHidden("airControl")) {
+    $("#airTemperature").hide();
   }
 }

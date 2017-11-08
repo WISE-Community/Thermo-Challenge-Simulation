@@ -1,10 +1,10 @@
 /**
  * Parses the GET URL parameters and returns the key/value result as an object.
- * Code from SO thread:
+ * Code is taken from SO thread:
  * https://stackoverflow.com/questions/19491336/get-url-parameter-jquery-or-how-to-get-query-string-values-in-js
  */
 function getURLParameters(key) {
-  let parameters = {};
+  const parameters = {};
   window.location.search
       .replace(/[?&]+([^=&]+)=([^&]*)/gi, function(str, key, value) {
         parameters[key] = value;
@@ -17,6 +17,21 @@ function isHideCanvas() {
 }
 
 function isShowCanvas() {
-  let showCanvas = getURLParameters("showCanvas");
+  const showCanvas = getURLParameters("showCanvas");
   return showCanvas == undefined || showCanvas == 'true';
+}
+
+function isControlHidden(controlName) {
+  const control = getURLParameters(controlName);
+  return control == 'isHidden';
+}
+
+function isControlDisplayedAndNotEditable(controlName) {
+  const control = getURLParameters(controlName);
+  return control == 'isDisplayedAndNotEditable';
+}
+
+function isControlDisplayedAndEditable(controlName) {
+  const control = getURLParameters(controlName);
+  return control == undefined || control == 'isDisplayedAndEditable';
 }
