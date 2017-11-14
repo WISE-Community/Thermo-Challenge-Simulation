@@ -1,2 +1,2 @@
-# Thermo-Challenge-Simulation
-Simulates changing temperature with various materials and temperatures
+# Thermodynamics-Cup-Material-Simulation
+Simulates changing temperature with various cup materials and surrounding air/liquid temperatures
