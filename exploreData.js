@@ -1,4 +1,5 @@
-// world specs allow us to translate from canvas pixels to world voxels [voxels heretofore represent world units]
+// World specs allow us to translate from canvas pixels to world voxels
+// Voxels heretofore represent world units
 const worldSpecs = {
   min_x: -10,
   max_x: 10,
@@ -7,64 +8,78 @@ const worldSpecs = {
   temperature_min: 0,
   temperature_max: 100,
   flow_speed: 4,
-  max_ticks:30 * 30,
-  series:[],
+  max_ticks: 30 * 30,
+  series: [],
   trialId: null
 };
 
-// world objects include thermometers and cups
-// thermometers should have structure: x, y (voxel at which temp is collected), color
-// if a thermometer has a 'series' field, will save data
-// cups should have structure: x, y (top-left,top-right), width, height (voxels), thickness ( of wall in voxels)
+/**
+ * World objects include thermometers and cups
+ * Thermometers should have structure:
+ *   x, y (voxel at which temp is collected), color
+ * Cups should have structure:
+ *   x, y (top-left,top-right), width, height (voxels),
+ *   thickness (of wall in voxels)
+ */
 const worldObjects = {
   thermometers:[
-    {x:0, y:-1, color:"#00FF00", saveSeries:true},
-    {x:0, y:7, color:"#FF00DD"}
+    { x:0, y:-1, color:"#00FF00", saveSeries:true },
+    { x:0, y:7, color:"#FF00DD" }
   ],
   cups: [
-    {x: -6, y: -8, width: 13, height: 13, thickness:3, liquid:"Water", material:"", liquid_temperature:null, material_temperature:25}
+    {
+      x: -6,
+      y: -8,
+      width: 13,
+      height: 13,
+      thickness: 3,
+      liquid: "Water",
+      material: "",
+      liquid_temperature: null,
+      material_temperature: 25
+    }
   ],
   air: {
-    temperature:null,
-    conductivity:100,
-    color:"#FFEECC"
+    temperature: null,
+    conductivity: 100,
+    color: "#FFEECC"
   },
   liquids: {
-    "Water":{
-      conductivity:100,
-      color:"rgba(220,220,250,0.7)"
+    "Water": {
+      conductivity: 100,
+      color: "rgba(220,220,250,0.7)"
     }
   },
   materials: {
-    "Aluminum":{
+    "Aluminum": {
       conductivity: 200,
-      color:"#AAAAAA",
-      stroke_color:"#888888"
+      color: "#AAAAAA",
+      stroke_color: "#888888"
     },
-    "Wood":{
+    "Wood": {
       conductivity: 10,
-      color:"#996622",
-      stroke_color:"#774400"
+      color: "#996622",
+      stroke_color: "#774400"
     },
-    "Styrofoam":{
+    "Styrofoam": {
       conductivity: 1,
-      color:"#FFFFFF",
-      stroke_color:"#DDDDDD"
+      color: "#FFFFFF",
+      stroke_color: "#DDDDDD"
     },
-    "Clay":{
+    "Clay": {
       conductivity: 20,
-      color:"#FF8844",
-      stroke_color:"#DD6622"
+      color: "#FF8844",
+      stroke_color: "#DD6622"
     },
-    "Glass":{
+    "Glass": {
       conductivity: 40,
-      color:"rgba(150,200,180,0.5)",
-      stroke_color:"rgba(100,150,130,0.8)"
+      color: "rgba(150,200,180,0.5)",
+      stroke_color: "rgba(100,150,130,0.8)"
     },
-    "Plastic":{
+    "Plastic": {
       conductivity: 20,
-      color:"#FF33AA",
-      stroke_color:"#DD1188"
+      color: "#FF33AA",
+      stroke_color: "#DD1188"
     }
   }
 };
@@ -96,7 +111,8 @@ function initTemperatureColorLegend(stage) {
     const hsl = tempToHSL(t);
     const col = "hsl(" + hsl.h + "," + hsl.s + "," + hsl.l + ")";
     const height_px = colorMap.shape.height_px / (worldSpecs.temperature_range+1);
-    colorMap.shape.graphics.beginFill(col).drawRect(20, 60 + (worldSpecs.temperature_max - t) * height_px, colorMap.shape.width_px, height_px).endFill();
+    colorMap.shape.graphics.beginFill(col)
+        .drawRect(20, 60 + (worldSpecs.temperature_max - t) * height_px, colorMap.shape.width_px, height_px).endFill();
 
     if (t % 20 == 0) {
       const text = new createjs.Text(t+ " °C", "14px Arial", "#008833");
@@ -118,10 +134,10 @@ function initializeValues() {
   worldSpecs.height = worldSpecs.max_y - worldSpecs.min_y + 1;
   worldSpecs.voxel_width = worldSpecs.width_px / (worldSpecs.width);
   worldSpecs.voxel_height = worldSpecs.height_px / (worldSpecs.height);
-  worldSpecs.temperature_range = worldSpecs.temperature_max - worldSpecs.temperature_min;
+  worldSpecs.temperature_range =
+      worldSpecs.temperature_max - worldSpecs.temperature_min;
 }
 
-/** Function returns a blank world where each voxel is set to initial conditions */
 function initWorld() {
   if (world == null) {
     world = new createjs.Container();
@@ -141,10 +157,20 @@ function initWorld() {
   // first assume everything is air
   for (let x = worldSpecs.min_x; x <= worldSpecs.max_x; x++) {
     for (let y = worldSpecs.min_y; y <= worldSpecs.max_y; y++) {
-      world.voxels.push({x:x, y:y, temperature:worldObjects.air.temperature, conductivity:worldObjects.air.conductivity, type:"air", color:worldObjects.air.color});
+      world.voxels.push(
+          {
+            x: x,
+            y: y,
+            temperature: worldObjects.air.temperature,
+            conductivity: worldObjects.air.conductivity,
+            type: "air",
+            color: worldObjects.air.color
+          }
+      );
       const box = voxelToPixels(x, y);
       if (worldObjects.air.temperature != null) {
-        world.shape.graphics.beginFill(worldObjects.air.color).drawRect(box.x0, box.y0, box.width, box.height).endFill();
+        world.shape.graphics.beginFill(worldObjects.air.color)
+            .drawRect(box.x0, box.y0, box.width, box.height).endFill();
       }
     }
   }
@@ -153,7 +179,8 @@ function initWorld() {
     const cup = worldObjects.cups[i];
     // only draw if the material is selected
     if (cup.material != null && cup.material.length > 0) {
-      // now update for cup materials (this will be a bit redundant because we are updating the liquid area twice, but not too bad)
+      // now update for cup materials (this will be a bit redundant
+      // because we are updating the liquid area twice, but not too bad)
       for (let x = cup.x; x < (cup.x + cup.width); x++) {
         for (let y = cup.y; y < (cup.y + cup.height); y++) {
           const voxel = getVoxel(x, y);
@@ -162,7 +189,8 @@ function initWorld() {
           voxel.color = worldObjects.materials[cup.material].color;
           voxel.type = "material-" + i;
           const box = voxelToPixels(x, y);
-          world.shape.graphics.beginFill(voxel.color).drawRect(box.x0, box.y0, box.width, box.height).endFill();
+          world.shape.graphics.beginFill(voxel.color)
+              .drawRect(box.x0, box.y0, box.width, box.height).endFill();
         }
       }
       if (cup.liquid_temperature != null) {
@@ -175,7 +203,8 @@ function initWorld() {
             voxel.color = worldObjects.liquids[cup.liquid].color;
             voxel.type = "liquid-"+i;
             const box = voxelToPixels(x, y);
-            world.shape.graphics.beginFill(voxel.color).drawRect(box.x0, box.y0, box.width, box.height).endFill();
+            world.shape.graphics.beginFill(voxel.color)
+                .drawRect(box.x0, box.y0, box.width, box.height).endFill();
           }
         }
       }
@@ -188,7 +217,8 @@ function initWorld() {
   // update temperature on thermometers
   for (const thermometer of worldObjects.thermometers) {
     const voxel = getVoxel(thermometer.x, thermometer.y);
-    thermometer.text.text = voxel.temperature == null ? "" : voxel.temperature + " °C";
+    thermometer.text.text =
+        voxel.temperature == null ? "" : voxel.temperature + " °C";
   }
 }
 
@@ -217,10 +247,12 @@ function drawLiquidAndCupBorders() {
     const topLeft = voxelToPixels(cup.x, cup.y + cup.height-1);
     const outline = cup.outline;
     const color = cup.material != null && cup.material.length > 0 ? (worldObjects.materials[cup.material].stroke_color != null ? worldObjects.materials[cup.material].stroke_color: worldObjects.materials[cup.material].color) : "#444444";
-    outline.graphics.clear().setStrokeStyle(1).beginStroke(color).drawRect(topLeft.x0, topLeft.y0, cup.width*worldSpecs.voxel_width, cup.height*worldSpecs.voxel_height).endStroke();
+    outline.graphics.clear().setStrokeStyle(1).beginStroke(color)
+        .drawRect(topLeft.x0, topLeft.y0, cup.width*worldSpecs.voxel_width, cup.height*worldSpecs.voxel_height).endStroke();
 
     const iTopLeft = voxelToPixels(cup.x + cup.thickness, cup.y + cup.height - 1 - cup.thickness);
-    outline.graphics.setStrokeStyle(1).beginStroke(color).drawRect(iTopLeft.x0, iTopLeft.y0, (cup.width-2*cup.thickness)*worldSpecs.voxel_width,  (cup.height-2*cup.thickness)*worldSpecs.voxel_height).endStroke();
+    outline.graphics.setStrokeStyle(1).beginStroke(color)
+        .drawRect(iTopLeft.x0, iTopLeft.y0, (cup.width-2*cup.thickness)*worldSpecs.voxel_width, (cup.height-2*cup.thickness)*worldSpecs.voxel_height).endStroke();
     outline.cache(topLeft.x0 - 1, topLeft.y0 - 1, cup.width * worldSpecs.voxel_width + 2, cup.height * worldSpecs.voxel_height + 2);
   }
 }
@@ -230,9 +262,11 @@ function initializeThermometers(world) {
     const shape = new createjs.Shape();
     const box = voxelToPixels(thermometer.x, thermometer.y);
     shape.graphics.setStrokeStyle(2).beginStroke(thermometer.color)
-        .beginFill("white").drawRoundRect(-box.width/4, -box.height/4, box.width/2, 50, 4).endFill().endStroke();
-    shape.graphics.setStrokeStyle(2).beginStroke(thermometer.color).beginFill("white")
-        .drawCircle(0, 0, box.width/2).endFill().endStroke();
+        .beginFill("white")
+        .drawRoundRect(-box.width/4, -box.height/4, box.width/2, 50, 4)
+        .endFill().endStroke();
+    shape.graphics.setStrokeStyle(2).beginStroke(thermometer.color)
+        .beginFill("white").drawCircle(0, 0, box.width/2).endFill().endStroke();
     shape.x = box.x0 + box.width/2;
     shape.y = box.y0 + box.height/2;
     shape.cache(-box.width/2 - 2, -box.height/2 - 2, box.width + 4, 56);
@@ -249,12 +283,15 @@ function initializeThermometers(world) {
 
 /**
  * Entry point to application
- * @param material values are in worldObjects.material:  "Aluminum", "Wood", "Clay", "Plastic", "Styrofoam"
- * @param beverageTemperatureText starting beverage temperature: "Hot", "Warm", "Cold"
+ * @param material values are in worldObjects.material:
+ *   "Aluminum", "Wood", "Clay", "Plastic", "Styrofoam"
+ * @param beverageTemperatureText starting beverage temperature:
+ *   "Hot", "Warm", "Cold"
  * @param airTemperatureText starting air temperature: "Hot", "Warm", "Cold"
  */
 function showTrial(material, beverageTemperatureText, airTemperatureText) {
-  let trialId = getTrialId(material, beverageTemperatureText, airTemperatureText);
+  let trialId =
+      getTrialId(material, beverageTemperatureText, airTemperatureText);
   if (!trialAlreadyExists(trialId)) {
     generateTrial(material, beverageTemperatureText, airTemperatureText);
   }
@@ -269,7 +306,8 @@ function generateTrial(material, beverageTemperatureText, airTemperatureText) {
 
 function setupTrial(material, bevTemperature, airTemperature) {
   worldObjects.cups[0].material = material;
-  worldObjects.cups[0].liquid_temperature = convertTempTextToTempNum(bevTemperature);
+  worldObjects.cups[0].liquid_temperature =
+      convertTempTextToTempNum(bevTemperature);
   worldObjects.air.temperature = convertTempTextToTempNum(airTemperature);
   world.ticks = 0;
   currentTrialWorlds = [];
@@ -278,7 +316,8 @@ function setupTrial(material, bevTemperature, airTemperature) {
 }
 
 function runEntireTrial(material, beverageTemperatureText, airTemperatureText) {
-  let trialId = getTrialId(material, beverageTemperatureText, airTemperatureText);
+  let trialId =
+      getTrialId(material, beverageTemperatureText, airTemperatureText);
   while (true) {
     updateTemperatures();
     recordTemperatures();
@@ -297,8 +336,9 @@ function runEntireTrial(material, beverageTemperatureText, airTemperatureText) {
   }
 }
 
-/** This function applies updates temperatures based on neighbors (above, below, left, right)
- **  To make it function like NetLogo we need to shuffle the voxels
+/**
+ * Updates temperatures based on neighbors (above, below, left, right)
+ * To make it function like NetLogo we need to shuffle the voxels
  */
 function updateTemperatures () {
   const indexArray = shuffledIndexArray(world.voxels.length);
@@ -315,7 +355,8 @@ function updateTemperatures () {
       const neighbor = getVoxel(neighborIndices[j][0], neighborIndices[j][1]);
       if (neighbor != null) {
         const con = Math.min(neighbor.conductivity, my_con);
-        netFlowOfEnergy += worldSpecs.flow_speed * con / framerate * (neighbor.temperature - my_temp) / worldSpecs.temperature_range;
+        netFlowOfEnergy += worldSpecs.flow_speed * con / framerate
+            * (neighbor.temperature - my_temp) / worldSpecs.temperature_range;
       }
     }
 
@@ -354,7 +395,8 @@ function showTrialRenderingBox(trialId) {
   $("#trial").append('<div><canvas id="canvas_' + trialId + '" width="310" height="310" style="background-color:#eeeeef"></canvas></div>');
   $("#trial").append('<input id="showWorldsSlider_' + trialId + '" style="width:400px" type="range" min="0" max="300" step="1" value="0"/>');
 
-  $("#showWorldsSlider_" + trialId).attr("max", allTrialsWorlds[trialId].length - 1);
+  $("#showWorldsSlider_" + trialId).attr("max",
+      allTrialsWorlds[trialId].length - 1);
   $("#showWorldsSlider_" + trialId).on("input change", function() {
     let tickLocation = $(this).val();
     showTrialAtTick(trialId, tickLocation);
@@ -383,7 +425,9 @@ function showTrialAtTick(trialId, tick) {
     voxel.heat_color = "hsla(" + hsl.h + ", " + hsl.s + ", " + hsl.l + ", 1.0)";
     voxel.stroke_color = "hsla(" + hsl.h + ", 50%, " + hsl.l + ", 1.0)";
     const box = voxelToPixels(voxel.x, voxel.y);
-    worldData.heatShape.graphics.setStrokeStyle(0.5).beginStroke(voxel.stroke_color).beginFill(voxel.heat_color).drawRect(box.x0, box.y0, box.width, box.height).endFill().endStroke();
+    worldData.heatShape.graphics.setStrokeStyle(0.5)
+        .beginStroke(voxel.stroke_color).beginFill(voxel.heat_color)
+        .drawRect(box.x0, box.y0, box.width, box.height).endFill().endStroke();
   }
 
   for (const thermometer of worldObjects.thermometers) {
@@ -395,7 +439,8 @@ function showTrialAtTick(trialId, tick) {
 }
 
 function getTrialId(material, bevTemperatureText, airTemperatureText) {
-  return material + "-" + bevTemperatureText + "Bev" + "-" + airTemperatureText + "Air";
+  return material + "-" + bevTemperatureText + "Bev" + "-" +
+      airTemperatureText + "Air";
 }
 
 function trialAlreadyExists(trialId) {
@@ -418,12 +463,15 @@ function resetThermometers() {
   }
 }
 
-////////////////// UTILITY FUNCTIONS
-/* When given the x and y coordinate of a voxel, returns the bounding box information for the canvas
-   {x0, y0, x1, y1, width, height}
-  */
+/**
+ * Given the x and y coordinate of a voxel, returns the bounding box
+ * information for the canvas {x0, y0, x1, y1, width, height}
+ */
 function voxelToPixels(x, y) {
-  if (x >= worldSpecs.min_x && x <= worldSpecs.max_x && y >= worldSpecs.min_y && y <= worldSpecs.max_y) {
+  if (x >= worldSpecs.min_x &&
+      x <= worldSpecs.max_x &&
+      y >= worldSpecs.min_y &&
+      y <= worldSpecs.max_y) {
     const box = {
       x0: worldSpecs.width_px/2 + worldSpecs.voxel_width*x - worldSpecs.voxel_width/2,
       y0: worldSpecs.height_px/2 - worldSpecs.voxel_height*y - worldSpecs.voxel_height/2,
@@ -438,8 +486,11 @@ function voxelToPixels(x, y) {
   }
 }
 
-/** Given the x, y coordinates of the voxel, retrieve the appropriate voxel from the array */
-function getVoxelIndex (vx, vy) {
+/**
+ * Given the x, y coordinates of the voxel, retrieve the appropriate voxel
+ * from the array
+ */
+function getVoxelIndex(vx, vy) {
   const xdiff = vx - worldSpecs.min_x;
   const ydiff = vy - worldSpecs.min_y;
   return worldSpecs.height * xdiff + ydiff;
@@ -455,7 +506,8 @@ function getVoxel(vx, vy) {
  * 100 degrees = red
  */
 function tempToHSL(temperature) {
-  const temp_frac = (temperature - worldSpecs.temperature_min) / worldSpecs.temperature_range;
+  const temp_frac = (temperature - worldSpecs.temperature_min)
+      / worldSpecs.temperature_range;
   return {
     h: 0,
     s: "100%",
