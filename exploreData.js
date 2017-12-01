@@ -449,17 +449,16 @@ function getVoxel(vx, vy) {
   return world.voxels[getVoxelIndex(vx, vy)];
 }
 
+/**
+ * Returns HSL given integer temperature.
+ * 0 degrees = white
+ * 100 degrees = red
+ */
 function tempToHSL(temperature) {
   const temp_frac = (temperature - worldSpecs.temperature_min) / worldSpecs.temperature_range;
-  const hsl = {};
-  if (temp_frac < 0.5) {
-    hsl.h = 225;
-    hsl.s = "100%";
-    hsl.l = (0.5 + temp_frac) * 100 + "%";
-  } else {
-    hsl.h = 0;
-    hsl.s = "100%";
-    hsl.l = (0.5 + (1 - temp_frac)) * 100 + "%";
-  }
-  return hsl;
+  return {
+    h: 0,
+    s: "100%",
+    l: 100 - (50 * temp_frac) + "%"
+  };
 }
