@@ -463,3 +463,150 @@ function tempToHSL(temperature) {
   }
   return hsl;
 }
+
+/**
+ * Send a message to the parent
+ * @param the message to send to the parent
+ */
+function sendMessage(message) {
+  parent.postMessage(message, "*");
+}
+
+/**
+ * Receive a message from the parent
+ * @param message the message from the parent
+ */
+function receiveMessage(message) {
+  if (message != null) {
+    var messageData = message.data;
+
+    if (messageData != null) {
+      if (messageData.messageType == 'studentWork') {
+        /*
+         * we have received a message that contains student work from
+         * other components
+         */
+        this.studentWorkFromThisNode = messageData.studentWorkFromThisNode;
+        this.studentWorkFromOtherComponents = messageData.studentWorkFromOtherComponents;
+
+      } else if (messageData.messageType == 'nodeSubmitClicked') {
+        /*
+         * the student has clicked the submit button and the student
+         * work has been included in the message data
+         */
+        this.studentWorkFromThisNode = messageData.studentWorkFromThisNode;
+        this.studentWorkFromOtherComponents = messageData.studentWorkFromOtherComponents;
+      } else if (messageData.messageType == 'componentStateSaved') {
+        var componentState = messageData.componentState;
+      } else if (messageData.messageType == 'parameters') {
+        // WISE has sent the parameters to us
+        //console.log(messageData.parameters);
+      } else if (messageData.messageType == 'siblingComponentStudentDataChanged') {
+        var componentState = messageData.componentState;
+      } else if (messageData.messageType == 'handleConnectedComponentStudentDataChanged') {
+        var componentState = messageData.componentState;
+        if (componentState.componentType == 'Graph') {
+          showModelStateFromGraphStudentWork(componentState);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Get the data from a Graph component state and use the data to display the model at a
+ * specific tick.
+ * @param componentState A component state from a Graph component.
+ */
+function showModelStateFromGraphStudentWork(componentState) {
+  // show the trial that is active in the graph component state
+  let trialId = showTrialFromComponentState(componentState);
+
+  // get the x value as a percentage of the max x limit
+  let percentage = getXPercentage(componentState);
+
+  // get the tick that we want to show
+  let tick = Math.floor(percentage * (allTrialsWorlds[trialId].length - 1));
+
+  showTrialAtTick(trialId, tick);
+}
+
+/**
+ * Show the trial that is active in the Graph component state.
+ * @param componenState A component state from a Graph component.
+ * @return the trial id
+ */
+function showTrialFromComponentState(componentState) {
+
+  // get the active graph trial object
+  let trial = getShownTrial(componentState);
+
+  // we will assume there is only one series per trial
+  let series = trial.series[0];
+
+  /*
+   * the series name should be in the format (Material)-(Temp)Bev-(Temp)Air for example
+   * Clay-HotBev-ColdAir
+   */
+  let seriesName = series.name;
+
+  // extract the material and temp levels
+  let regEx = /(.*)-(.*)Bev-(.*)Air/;
+  let match = regEx.exec(seriesName);
+  let material = match[1];
+  let beverageTemp = match[2];
+  let airTemp = match[3];
+
+  // show the trial in the model that corresponds to the combination of parameters
+  showTrial(material, beverageTemp, airTemp);
+
+  return getTrialId(material, beverageTemp, airTemp);
+}
+
+/**
+ * Get the trial that is shown in the graph.
+ * @param componentState The student work.
+ * @return The first trial that is shown.
+ */
+function getShownTrial(componentState) {
+  for (let trial of componentState.studentData.trials) {
+    if (trial.show) {
+      return trial;
+    }
+  }
+}
+
+/**
+ * Get the x value of the latest mouse location in the units of the graph.
+ * For example, if the graph has time on the x axis and the x axis spans from
+ * t=0 to t=10. The x value will be between 0 and 10.
+ * @param componentState The student work.
+ * @return A location of the mouse in the units of the graph.
+ */
+function getMouseX(componentState) {
+  let mouseOverPoint = componentState.studentData.mouseOverPoints[componentState.studentData.mouseOverPoints.length - 1];
+  return mouseOverPoint[0];
+}
+
+/**
+ * Get the x value as a percentage of the max x axis limit.
+ * @param componentState The student work.
+ * @return A number between 0 and 1.
+ */
+function getXPercentage(componentState) {
+  let x = getMouseX(componentState);
+  let maxX = getMaxX(componentState);
+  return x / maxX;
+}
+
+/**
+ * Get the x axis max limit.
+ * @param componentState The student work.
+ * @return A number which is the x axis max limit.
+ */
+function getMaxX(componentState) {
+  return componentState.studentData.xAxis.max;
+}
+
+// listen for messages from the parent
+window.addEventListener('message', receiveMessage);
