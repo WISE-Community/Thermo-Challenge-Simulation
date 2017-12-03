@@ -89,12 +89,19 @@ let world = null;
 let allTrialsWorlds = {};
 let currentTrialWorlds = [];
 let framerate = 120;
+let trialsPlayed = {
+  trialIdToTicks: []
+};
 
 function init() {
   initializeValues();
   stage = new createjs.Stage($("#canvas")[0]);
   initWorld();
   initTemperatureColorLegend(stage);
+
+  if (isShowSelectTrialGrid()) {
+    setupSelectTrialGrid();
+  }
 }
 
 function initTemperatureColorLegend(stage) {
@@ -280,6 +287,23 @@ function initializeThermometers(world) {
   }
 }
 
+function setupSelectTrialGrid() {
+  $("#selectTrialGrid").show();
+  $("#selectTrialGrid").css("display", "flex");
+  $(".token").draggable({
+    snap: ".snappable",
+    snapMode: "inner",
+    revert: "invalid"
+  });
+  $(".snappable").droppable({
+    drop: function(event, ui) {
+      let material = $(this).attr("material");
+      let beverageTemperature = $(this).attr("bevTemp");
+      let airTemperature = $(this).attr("airTemp");
+      showTrial(material, beverageTemperature, airTemperature);
+    }
+  });
+}
 
 /**
  * Entry point to application
@@ -436,11 +460,49 @@ function showTrialAtTick(trialId, tick) {
     thermometer.text.text = voxel.temperature.toFixed(1) + " °C";
   }
   stage.update();
+  updateTrialsPlayed(trialId, tick);
+  if (isShowSelectTrialGrid()) {
+    updateSelectTrialGrid(trialId);
+  }
+}
+
+function updateTrialsPlayed(trialId, tick) {
+  if (trialsPlayed[trialId] == null) {
+    trialsPlayed[trialId] = [];
+  }
+  trialsPlayed[trialId].push(tick);
+}
+
+function updateSelectTrialGrid(trialId) {
+  if (trialsPlayed[trialId].length > 50) {
+    let material = getTrialMaterial(trialId);
+    let liquidTemperature = getTrialLiquidTemperature(trialId);
+    let airTemperature = getTrialAirTemperature(trialId);
+    let currentTrialGrid = $("div[material=" + material + "][bevtemp=" + liquidTemperature + "][airtemp=" + airTemperature + "]");
+    currentTrialGrid.addClass("trialCompleted")
+  }
 }
 
 function getTrialId(material, bevTemperatureText, airTemperatureText) {
   return material + "-" + bevTemperatureText + "Bev" + "-" +
       airTemperatureText + "Air";
+}
+
+function getTrialMaterial(trialId) {
+  return trialId.substring(0, trialId.indexOf("-"));
+}
+
+function getTrialLiquidTemperature(trialId) {
+  // "HotBev", "WarmBev", "ColdBev"
+  let liquidTempStr =
+    trialId.substring(trialId.indexOf("-") + 1, trialId.lastIndexOf("-"));
+  return liquidTempStr.substring(0, liquidTempStr.length - 3);
+}
+
+function getTrialAirTemperature(trialId) {
+  // "HotAir", "WarmAir", "ColdAir"
+  let airTempStr = trialId.substring(trialId.lastIndexOf("-") + 1);
+  return airTempStr.substring(0, airTempStr.length - 3);
 }
 
 function trialAlreadyExists(trialId) {

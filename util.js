@@ -35,3 +35,8 @@ function isControlDisplayedAndEditable(controlName) {
   const control = getURLParameters(controlName);
   return control == undefined || control == 'isDisplayedAndEditable';
 }
+
+function isShowSelectTrialGrid() {
+  const selectTrialMode = getURLParameters("selectTrialMode");
+  return selectTrialMode == 'grid';
+}
