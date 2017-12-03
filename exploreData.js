@@ -591,7 +591,7 @@ function sendMessage(message) {
  */
 function receiveMessage(message) {
   if (message != null) {
-    var messageData = message.data;
+    let messageData = message.data;
 
     if (messageData != null) {
       if (messageData.messageType == 'studentWork') {
@@ -610,14 +610,14 @@ function receiveMessage(message) {
         this.studentWorkFromThisNode = messageData.studentWorkFromThisNode;
         this.studentWorkFromOtherComponents = messageData.studentWorkFromOtherComponents;
       } else if (messageData.messageType == 'componentStateSaved') {
-        var componentState = messageData.componentState;
+        let componentState = messageData.componentState;
       } else if (messageData.messageType == 'parameters') {
         // WISE has sent the parameters to us
         //console.log(messageData.parameters);
       } else if (messageData.messageType == 'siblingComponentStudentDataChanged') {
-        var componentState = messageData.componentState;
+        let componentState = messageData.componentState;
       } else if (messageData.messageType == 'handleConnectedComponentStudentDataChanged') {
-        var componentState = messageData.componentState;
+        let componentState = messageData.componentState;
         if (componentState.componentType == 'Graph') {
           showModelStateFromGraphStudentWork(componentState);
         }
@@ -632,14 +632,11 @@ function receiveMessage(message) {
  * @param componentState A component state from a Graph component.
  */
 function showModelStateFromGraphStudentWork(componentState) {
-  // show the trial that is active in the graph component state
-  let trialId = showTrialFromComponentState(componentState);
-
-  // get the x value as a percentage of the max x limit
-  let percentage = getXPercentage(componentState);
-
-  // get the tick that we want to show
-  let tick = Math.floor(percentage * (allTrialsWorlds[trialId].length - 1));
+  // TODO: this line should be two separate calls: one to show, and one to get the trial id
+  const trialIdInComponentState = showTrialFromComponentState(componentState);
+  const xPercentage = getXPercentage(componentState);
+  const tick = Math.floor(
+      xPercentage * (allTrialsWorlds[trialIdInComponentState].length - 1));
 
   showTrialAtTick(trialId, tick);
 }
@@ -650,29 +647,22 @@ function showModelStateFromGraphStudentWork(componentState) {
  * @return the trial id
  */
 function showTrialFromComponentState(componentState) {
-
-  // get the active graph trial object
-  let trial = getShownTrial(componentState);
-
-  // we will assume there is only one series per trial
-  let series = trial.series[0];
+  const activeTrial = getShownTrial(componentState);
+  const series = activeTrial.series[0];
 
   /*
-   * the series name should be in the format (Material)-(Temp)Bev-(Temp)Air for example
-   * Clay-HotBev-ColdAir
+   * the series name should be in the format (Material)-(Temp)Bev-(Temp)Air
+   * e.g. Clay-HotBev-ColdAir
    */
   let seriesName = series.name;
 
-  // extract the material and temp levels
   let regEx = /(.*)-(.*)Bev-(.*)Air/;
   let match = regEx.exec(seriesName);
   let material = match[1];
   let beverageTemp = match[2];
   let airTemp = match[3];
 
-  // show the trial in the model that corresponds to the combination of parameters
   showTrial(material, beverageTemp, airTemp);
-
   return getTrialId(material, beverageTemp, airTemp);
 }
 
@@ -697,7 +687,7 @@ function getShownTrial(componentState) {
  * @return A location of the mouse in the units of the graph.
  */
 function getMouseX(componentState) {
-  let mouseOverPoint = componentState.studentData.mouseOverPoints[componentState.studentData.mouseOverPoints.length - 1];
+  const mouseOverPoint = componentState.studentData.mouseOverPoints[componentState.studentData.mouseOverPoints.length - 1];
   return mouseOverPoint[0];
 }
 
@@ -707,8 +697,8 @@ function getMouseX(componentState) {
  * @return A number between 0 and 1.
  */
 function getXPercentage(componentState) {
-  let x = getMouseX(componentState);
-  let maxX = getMaxX(componentState);
+  const x = getMouseX(componentState);
+  const maxX = getMaxX(componentState);
   return x / maxX;
 }
 
