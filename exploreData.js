@@ -566,6 +566,8 @@ function getVoxel(vx, vy) {
  * Returns HSL given integer temperature.
  * 0 degrees = white
  * 100 degrees = red
+ * We use an exponential function so there can be a wider range for lower
+ * temperatures (0->40) and ~50 will be pinkish.
  */
 function tempToHSL(temperature) {
   const temp_frac = (temperature - worldSpecs.temperature_min)
@@ -573,7 +575,7 @@ function tempToHSL(temperature) {
   return {
     h: 0,
     s: "100%",
-    l: 100 - (50 * temp_frac) + "%"
+    l: 100 - (65 * (temp_frac * temp_frac)) + "%"
   };
 }
 
