@@ -92,6 +92,7 @@ let framerate = 120;
 let trialsPlayed = {
   trialIdToTicks: []
 };
+let tempToHSLValues = {};
 
 function init() {
   initializeValues();
@@ -640,13 +641,20 @@ function getVoxel(vx, vy) {
  * temperatures (0->40) and ~50 will be pinkish.
  */
 function tempToHSL(temperature) {
-  const temp_frac = (temperature - worldSpecs.temperature_min)
+  let temp2Decimals = temperature.toFixed(2);
+  if (tempToHSLValues[temp2Decimals] != null) {
+    return tempToHSLValues[temp2Decimals];
+  } else {
+    const temp_frac = (temperature - worldSpecs.temperature_min)
       / worldSpecs.temperature_range;
-  return {
-    h: 0,
-    s: "100%",
-    l: 100 - (65 * (temp_frac * temp_frac)) + "%"
-  };
+    const hslValue = {
+      h: 0,
+      s: "100%",
+      l: 100 - (65 * (temp_frac * temp_frac)) + "%"
+    };
+    tempToHSLValues[temp2Decimals] = hslValue;
+    return hslValue;
+  }
 }
 
 /**
