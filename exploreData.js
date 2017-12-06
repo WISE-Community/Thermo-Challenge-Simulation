@@ -413,19 +413,89 @@ function recordTemperatures() {
   }
 }
 
+let currentSimulation;
+
 function showTrialRenderingBox(trialId) {
   $("#trial").empty();
   $("#trial").append('<h2>' + trialId + '</h2>');
   $("#trial").append('<div><canvas id="canvas_' + trialId + '" width="310" height="310" style="background-color:#eeeeef"></canvas></div>');
   $("#trial").append('<input id="showWorldsSlider_' + trialId + '" style="width:400px" type="range" min="0" max="300" step="1" value="0"/>');
+  $("#trial").append('<br/>');
+  $("#trial").append('<input id="playPauseWorld_' + trialId + '" type="button" value="Play"/>');
+  $("#trial").append('<span style="margin-left:10px" id="timePlaying_' + trialId + '"></span>');
+
+  currentSimulation = new Simulation(trialId);
 
   $("#showWorldsSlider_" + trialId).attr("max",
       allTrialsWorlds[trialId].length - 1);
   $("#showWorldsSlider_" + trialId).on("input change", function() {
     let tickLocation = $(this).val();
     showTrialAtTick(trialId, tickLocation);
+    currentSimulation.currentTick = tickLocation;
+    currentSimulation.showTime();
+  });
+  $("#playPauseWorld_" + trialId).on("click", function() {
+    let playPauseState = $(this).val();
+    if (playPauseState === "Play") {
+      currentSimulation.playSimulation();
+    } else if (playPauseState === "Replay") {
+      currentSimulation.replaySimulation();
+    } else {
+      currentSimulation.pauseSimulation();
+    }
   });
 }
+
+class Simulation {
+  constructor(trialId) {
+    this.trialId = trialId;
+    this.currentTick = 0;
+    this.intervalId;
+    this.timeout_sleep_duration_ms = 10;
+    this.maxTicks = worldSpecs.max_ticks;
+    this.maxDurationMinutes = 60;
+  }
+
+  playSimulation() {
+    this.intervalId = setInterval(() => {
+      if (this.currentTick >= worldSpecs.max_ticks) {
+        this.showResetState();
+      } else {
+        this.showPlayState();
+        $("#showWorldsSlider_" + this.trialId).val(this.currentTick);
+        showTrialAtTick(this.trialId, this.currentTick);
+        this.showTime();
+        this.currentTick++;
+      }
+    }, this.timeout_sleep_duration_ms);
+  }
+
+  showResetState() {
+    $("#playPauseWorld_" + this.trialId).val("Replay");
+  }
+
+  showPlayState() {
+    $("#playPauseWorld_" + this.trialId).val("Pause");
+  }
+
+  pauseSimulation() {
+    clearInterval(this.intervalId);
+    $("#playPauseWorld_" + this.trialId).val("Play");
+  }
+
+  replaySimulation() {
+    clearInterval(this.intervalId);
+    this.currentTick = 0;
+    this.playSimulation();
+  }
+
+  showTime() {
+    let currentTickPositionRatio = this.currentTick / this.maxTicks;
+    let minutesPlayed = Math.ceil(currentTickPositionRatio * this.maxDurationMinutes);
+    $("#timePlaying_" + this.trialId).html(minutesPlayed + " / " + this.maxDurationMinutes);
+  }
+}
+
 
 function showTrialIntialState(trialId) {
   showTrialAtTick(trialId, 0);
