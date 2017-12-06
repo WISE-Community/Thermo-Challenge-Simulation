@@ -98,14 +98,14 @@ function init() {
   initializeValues();
   stage = new createjs.Stage($("#canvas")[0]);
   initWorld();
-  initTemperatureColorLegend(stage);
 
   if (isShowSelectTrialGrid()) {
     setupSelectTrialGrid();
   }
 }
 
-function initTemperatureColorLegend(stage) {
+function initTemperatureColorLegend(trialId) {
+  const stage = new createjs.Stage($("#colorLegend_" + trialId)[0]);
   const colorMap = new createjs.Container();
   const text = new createjs.Text("Temperature \nColors", "16px Arial", "#008833");
   text.x = 0;
@@ -130,10 +130,12 @@ function initTemperatureColorLegend(stage) {
     }
   }
   colorMap.shape.cache(20, 60, colorMap.shape.width_px, colorMap.shape.height_px);
-  colorMap.x = worldSpecs.width_px + 5;
+  colorMap.x = 5;
   colorMap.y = 5;
   stage.addChild(colorMap);
+  stage.update();
 }
+
 
 function initializeValues() {
   worldSpecs.width_px = $("#canvas").width() - 100;
@@ -419,12 +421,13 @@ let currentSimulation;
 function showTrialRenderingBox(trialId) {
   $("#trial").empty();
   $("#trial").append('<h2>' + trialId + '</h2>');
-  $("#trial").append('<div><canvas id="canvas_' + trialId + '" width="310" height="310" style="background-color:#eeeeef"></canvas></div>');
+  $("#trial").append('<div><canvas id="canvas_' + trialId + '" width="210" height="310" style="background-color:#eeeeef"></canvas><canvas id="colorLegend_' + trialId + '" width="100" height="310" style="background-color:#eeeeef"></canvas></div>');
   $("#trial").append('<input id="showWorldsSlider_' + trialId + '" style="width:400px" type="range" min="0" max="300" step="1" value="0"/>');
   $("#trial").append('<br/>');
   $("#trial").append('<input id="playPauseWorld_' + trialId + '" type="button" value="Play"/>');
   $("#trial").append('<span style="margin-left:10px" id="timePlaying_' + trialId + '"></span>');
 
+  initTemperatureColorLegend(trialId);
   currentSimulation = new Simulation(trialId);
 
   $("#showWorldsSlider_" + trialId).attr("max",
@@ -510,7 +513,6 @@ function showTrialAtTick(trialId, tick) {
   world.addChild(worldData.heatShape);
   initializeOutlines(world);
   initializeThermometers(world);
-  initTemperatureColorLegend(stage);
   drawLiquidAndCupBorders();
   stage.addChild(world);
 
