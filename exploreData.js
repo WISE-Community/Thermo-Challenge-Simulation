@@ -408,21 +408,18 @@ class Simulation {
     let worldData = this.allWorldData[tick];
     let world = new createjs.Container();
     let heatShape = new createjs.Shape();
-
+    heatShape.graphics.setStrokeStyle(0.5);
     for (const voxel of worldData.voxels) {
       const hsl = tempToHSL(voxel.temperature);
       const heat_color = "hsla(" + hsl.h + ", " + hsl.s + ", " + hsl.l + ", 1.0)";
       const stroke_color = "hsla(" + hsl.h + ", 50%, " + hsl.l + ", 1.0)";
       const box = voxelToPixels(voxel.x, voxel.y);
-      heatShape.graphics.setStrokeStyle(0.5)
-        .beginStroke(stroke_color).beginFill(heat_color)
+      heatShape.graphics.beginStroke(stroke_color).beginFill(heat_color)
         .drawRect(box.x0, box.y0, box.width, box.height).endFill().endStroke();
     }
     world.addChild(heatShape);
-
-    initializeOutlines(world);
+    world.addChild(this.outlineContainer);
     initializeThermometers(world);
-    drawLiquidAndCupBorders();
 
     for (const thermometer of worldObjects.thermometers) {
       const voxel = worldData.voxels[getVoxelIndex(thermometer.x, thermometer.y)];
@@ -449,6 +446,7 @@ class Simulation {
 
     initTemperatureColorLegend(this.trialId);
     this.currentStage = new createjs.Stage($("#canvas_" + this.trialId)[0]);
+    this.outlineContainer = this.createOutlineContainer();
 
     $("#showWorldsSlider_" + this.trialId).attr("max", 899);
     $("#showWorldsSlider_" + this.trialId).on("input", function() {
@@ -559,7 +557,53 @@ class Simulation {
     this.showTrialAtTick(0);
   }
 
+  createOutlineContainer() {
+    let container = new createjs.Container();
+    for (const cup of worldObjects.cups) {
+      let topLeft = voxelToPixels(cup.x, cup.y+cup.height-1);
+
+      // draw outlines to match cup color
+      const outline = cup.outline = new createjs.Shape();
+      const color = getCupMaterialColor(cup);
+      outline.graphics.setStrokeStyle(1).beginStroke(color)
+        .drawRect(topLeft.x0, topLeft.y0, cup.width*worldSpecs.voxel_width, cup.height*worldSpecs.voxel_height).endStroke();
+      const iTopLeft = voxelToPixels(cup.x + cup.thickness, cup.y + cup.height - 1 - cup.thickness);
+      outline.graphics.setStrokeStyle(1).beginStroke(color)
+        .drawRect(iTopLeft.x0, iTopLeft.y0, (cup.width-2*cup.thickness)*worldSpecs.voxel_width, (cup.height-2*cup.thickness)*worldSpecs.voxel_height).endStroke();
+      outline.cache(topLeft.x0 - 1, topLeft.y0 - 1, cup.width * worldSpecs.voxel_width + 2, cup.height * worldSpecs.voxel_height + 2);
+
+      container.addChild(outline);
+      let text = new createjs.Text("Cup", "12px Arial", "black");
+      text.x = topLeft.x0 + cup.width*worldSpecs.voxel_width/2-10;
+      text.y = topLeft.y0 + 5;
+      container.addChild(text);
+
+      topLeft = voxelToPixels(cup.x+cup.thickness, cup.y+cup.height-1-cup.thickness);
+      text = new createjs.Text("Liquid", "12px Arial", "black");
+      text.x = topLeft.x0 + (cup.width-2*cup.thickness)*worldSpecs.voxel_width/2-12;
+      text.y = topLeft.y0 + (cup.height-cup.thickness)*worldSpecs.voxel_height/2-2;
+      container.addChild(text);
+    }
+    return container;
+  }
 }
+
+/*
+// draw outlines to match cup color
+for (let i = 0; i < worldObjects.cups.length; i++) {
+  const cup = worldObjects.cups[i];
+  const topLeft = voxelToPixels(cup.x, cup.y + cup.height-1);
+  const outline = cup.outline;
+  const color = getCupMaterialColor(cup);
+  outline.graphics.clear().setStrokeStyle(1).beginStroke(color)
+    .drawRect(topLeft.x0, topLeft.y0, cup.width*worldSpecs.voxel_width, cup.height*worldSpecs.voxel_height).endStroke();
+
+  const iTopLeft = voxelToPixels(cup.x + cup.thickness, cup.y + cup.height - 1 - cup.thickness);
+  outline.graphics.setStrokeStyle(1).beginStroke(color)
+    .drawRect(iTopLeft.x0, iTopLeft.y0, (cup.width-2*cup.thickness)*worldSpecs.voxel_width, (cup.height-2*cup.thickness)*worldSpecs.voxel_height).endStroke();
+  outline.cache(topLeft.x0 - 1, topLeft.y0 - 1, cup.width * worldSpecs.voxel_width + 2, cup.height * worldSpecs.voxel_height + 2);
+}
+*/
 
 function updateTrialsPlayed(trialId, tick) {
   if (trialsPlayed[trialId] == null) {
