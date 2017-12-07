@@ -86,7 +86,6 @@ const worldObjects = {
 
 let stage = null;
 let world = null;
-let allTrialsWorlds = {};
 let currentTrialWorlds = [];
 let framerate = 120;
 let trialsPlayed = {
@@ -323,10 +322,9 @@ function setupSelectTrialGrid() {
 function showTrial(material, beverageTemperatureText, airTemperatureText) {
   let trialId =
       getTrialId(material, beverageTemperatureText, airTemperatureText);
+  currentSimulation = new Simulation(trialId);
+  generateTrial(material, beverageTemperatureText, airTemperatureText);
   showTrialRenderingBox(trialId);
-  if (!trialAlreadyExists(trialId)) {
-    generateTrial(material, beverageTemperatureText, airTemperatureText);
-  }
   showTrialIntialState(trialId);
 }
 
@@ -361,7 +359,7 @@ function runEntireTrial(material, beverageTemperatureText, airTemperatureText) {
     currentTrialWorlds.push(worldCopy);
 
     if (world.ticks >= worldSpecs.max_ticks) {
-      allTrialsWorlds[trialId] = currentTrialWorlds;
+      currentSimulation.allWorldData = currentTrialWorlds;
       return;
     }
   }
@@ -439,14 +437,13 @@ function showTrialRenderingBox(trialId) {
   $("#trial").append('<span style="margin-left:10px" id="timePlaying_' + trialId + '"></span>');
 
   initTemperatureColorLegend(trialId);
-  currentSimulation = new Simulation(trialId);
   currentStage = new createjs.Stage($("#canvas_" + trialId)[0]);
 
 
   $("#showWorldsSlider_" + trialId).attr("max", 899);
   $("#showWorldsSlider_" + trialId).on("input", function() {
     let tickLocation = $(this).val();
-    showTrialAtTick(trialId, tickLocation);
+    currentSimulation.showTrialAtTick(tickLocation);
     currentSimulation.currentTick = tickLocation;
     currentSimulation.showTime();
     if (!currentSimulation.isSimulationPlaying()) {
@@ -478,6 +475,7 @@ class Simulation {
     this.maxTicks = worldSpecs.max_ticks;
     this.maxDurationMinutes = 60;
     this.data = [];
+    this.allWorldData = [];
   }
 
   isSimulationPlaying() {
@@ -491,7 +489,7 @@ class Simulation {
       } else {
         this.showPlayState();
         $("#showWorldsSlider_" + this.trialId).val(this.currentTick);
-        showTrialAtTick(this.trialId, this.currentTick);
+        this.showTrialAtTick(this.currentTick);
         this.showTime();
         this.currentTick++;
       }
@@ -524,47 +522,48 @@ class Simulation {
     let minutesPlayed = Math.ceil(currentTickPositionRatio * this.maxDurationMinutes);
     $("#timePlaying_" + this.trialId).html(minutesPlayed + " / " + this.maxDurationMinutes);
   }
+
+  showTrialAtTick(tick) {
+    currentStage.removeAllChildren();
+    let worldData = this.allWorldData[tick];
+    let world = new createjs.Container();
+    let heatShape = new createjs.Shape();
+
+    for (const voxel of worldData.voxels) {
+      const hsl = tempToHSL(voxel.temperature);
+      const heat_color = "hsla(" + hsl.h + ", " + hsl.s + ", " + hsl.l + ", 1.0)";
+      const stroke_color = "hsla(" + hsl.h + ", 50%, " + hsl.l + ", 1.0)";
+      const box = voxelToPixels(voxel.x, voxel.y);
+      heatShape.graphics.setStrokeStyle(0.5)
+        .beginStroke(stroke_color).beginFill(heat_color)
+        .drawRect(box.x0, box.y0, box.width, box.height).endFill().endStroke();
+    }
+    world.addChild(heatShape);
+
+    initializeOutlines(world);
+    initializeThermometers(world);
+    drawLiquidAndCupBorders();
+
+    for (const thermometer of worldObjects.thermometers) {
+      const voxel = worldData.voxels[getVoxelIndex(thermometer.x, thermometer.y)];
+      thermometer.temperature = voxel.temperature;
+      thermometer.text.text = voxel.temperature.toFixed(1) + " °C";
+    }
+    currentStage.addChild(world);
+    currentStage.update();
+    updateTrialsPlayed(currentSimulation.trialId, tick);
+    if (isShowSelectTrialGrid()) {
+      updateSelectTrialGrid(currentSimulation.trialId);
+    }
+    WISE_onTick(tick);
+  }
 }
 
 
 function showTrialIntialState(trialId) {
-  showTrialAtTick(trialId, 0);
+  currentSimulation.showTrialAtTick(0);
 }
 
-function showTrialAtTick(trialId, tick) {
-  currentStage.removeAllChildren();
-  let worldData = allTrialsWorlds[trialId][tick];
-  let world = new createjs.Container();
-  let heatShape = new createjs.Shape();
-
-  for (const voxel of worldData.voxels) {
-    const hsl = tempToHSL(voxel.temperature);
-    const heat_color = "hsla(" + hsl.h + ", " + hsl.s + ", " + hsl.l + ", 1.0)";
-    const stroke_color = "hsla(" + hsl.h + ", 50%, " + hsl.l + ", 1.0)";
-    const box = voxelToPixels(voxel.x, voxel.y);
-    heatShape.graphics.setStrokeStyle(0.5)
-        .beginStroke(stroke_color).beginFill(heat_color)
-        .drawRect(box.x0, box.y0, box.width, box.height).endFill().endStroke();
-  }
-  world.addChild(heatShape);
-
-  initializeOutlines(world);
-  initializeThermometers(world);
-  drawLiquidAndCupBorders();
-
-  for (const thermometer of worldObjects.thermometers) {
-    const voxel = worldData.voxels[getVoxelIndex(thermometer.x, thermometer.y)];
-    thermometer.temperature = voxel.temperature;
-    thermometer.text.text = voxel.temperature.toFixed(1) + " °C";
-  }
-  currentStage.addChild(world);
-  currentStage.update();
-  updateTrialsPlayed(trialId, tick);
-  if (isShowSelectTrialGrid()) {
-    updateSelectTrialGrid(trialId);
-  }
-  WISE_onTick(tick);
-}
 
 function updateTrialsPlayed(trialId, tick) {
   if (trialsPlayed[trialId] == null) {
@@ -603,10 +602,6 @@ function getTrialAirTemperature(trialId) {
   // "HotAir", "WarmAir", "ColdAir"
   let airTempStr = trialId.substring(trialId.lastIndexOf("-") + 1);
   return airTempStr.substring(0, airTempStr.length - 3);
-}
-
-function trialAlreadyExists(trialId) {
-  return allTrialsWorlds[trialId] != null;
 }
 
 function convertTempTextToTempNum(temperatureText) {
@@ -745,14 +740,14 @@ function showModelStateFromGraphStudentWork(componentState) {
   const trialIdInComponentState = showTrialFromComponentState(componentState);
   const xPercentage = getXPercentage(componentState);
   const tick = Math.floor(
-      xPercentage * (allTrialsWorlds[trialIdInComponentState].length - 1));
+      xPercentage * (currentSimulation.allWorldData.length - 1));
 
-  showTrialAtTick(trialId, tick);
+  currentSimulation.showTrialAtTick(tick);
 }
 
 /**
  * Show the trial that is active in the Graph component state.
- * @param componenState A component state from a Graph component.
+ * @param componentState A component state from a Graph component.
  * @return the trial id
  */
 function showTrialFromComponentState(componentState) {
