@@ -86,7 +86,6 @@ const worldObjects = {
 
 let stage = null;
 let world = null;
-let currentTrialWorlds = [];
 let framerate = 120;
 let trialsPlayed = {
   trialIdToTicks: []
@@ -481,7 +480,6 @@ class Simulation {
       convertTempTextToTempNum(bevTemperature);
     worldObjects.air.temperature = convertTempTextToTempNum(airTemperature);
     world.ticks = 0;
-    currentTrialWorlds = [];
     resetThermometers();
     initWorld();
   }
@@ -497,10 +495,9 @@ class Simulation {
         voxels: $.extend(true, [], world.voxels)
       };
       worldCopy.heatShape.parent = null;
-      currentTrialWorlds.push(worldCopy);
+      this.allWorldData.push(worldCopy);
 
       if (world.ticks >= worldSpecs.max_ticks) {
-        currentSimulation.allWorldData = currentTrialWorlds;
         return;
       }
     }
@@ -587,23 +584,6 @@ class Simulation {
     return container;
   }
 }
-
-/*
-// draw outlines to match cup color
-for (let i = 0; i < worldObjects.cups.length; i++) {
-  const cup = worldObjects.cups[i];
-  const topLeft = voxelToPixels(cup.x, cup.y + cup.height-1);
-  const outline = cup.outline;
-  const color = getCupMaterialColor(cup);
-  outline.graphics.clear().setStrokeStyle(1).beginStroke(color)
-    .drawRect(topLeft.x0, topLeft.y0, cup.width*worldSpecs.voxel_width, cup.height*worldSpecs.voxel_height).endStroke();
-
-  const iTopLeft = voxelToPixels(cup.x + cup.thickness, cup.y + cup.height - 1 - cup.thickness);
-  outline.graphics.setStrokeStyle(1).beginStroke(color)
-    .drawRect(iTopLeft.x0, iTopLeft.y0, (cup.width-2*cup.thickness)*worldSpecs.voxel_width, (cup.height-2*cup.thickness)*worldSpecs.voxel_height).endStroke();
-  outline.cache(topLeft.x0 - 1, topLeft.y0 - 1, cup.width * worldSpecs.voxel_width + 2, cup.height * worldSpecs.voxel_height + 2);
-}
-*/
 
 function updateTrialsPlayed(trialId, tick) {
   if (trialsPlayed[trialId] == null) {
