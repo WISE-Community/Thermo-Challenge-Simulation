@@ -418,7 +418,7 @@ class Simulation {
     }
     world.addChild(heatShape);
     world.addChild(this.outlineContainer);
-    initializeThermometers(world);
+    world.addChild(this.thermometers);
 
     for (const thermometer of worldObjects.thermometers) {
       const voxel = worldData.voxels[getVoxelIndex(thermometer.x, thermometer.y)];
@@ -446,6 +446,7 @@ class Simulation {
     initTemperatureColorLegend(this.trialId);
     this.currentStage = new createjs.Stage($("#canvas_" + this.trialId)[0]);
     this.outlineContainer = this.createOutlineContainer();
+    this.thermometers = this.createThermometerContainer();
 
     $("#showWorldsSlider_" + this.trialId).attr("max", 899);
     $("#showWorldsSlider_" + this.trialId).on("input", function() {
@@ -580,6 +581,31 @@ class Simulation {
       text.x = topLeft.x0 + (cup.width-2*cup.thickness)*worldSpecs.voxel_width/2-12;
       text.y = topLeft.y0 + (cup.height-cup.thickness)*worldSpecs.voxel_height/2-2;
       container.addChild(text);
+    }
+    return container;
+  }
+
+  createThermometerContainer() {
+    let container = new createjs.Container();
+    for (const thermometer of worldObjects.thermometers) {
+      const shape = new createjs.Shape();
+      const box = voxelToPixels(thermometer.x, thermometer.y);
+      shape.graphics.setStrokeStyle(2).beginStroke(thermometer.color)
+        .beginFill("white")
+        .drawRoundRect(-box.width/4, -box.height/4, box.width/2, 50, 4)
+        .endFill().endStroke();
+      shape.graphics.setStrokeStyle(2).beginStroke(thermometer.color)
+        .beginFill("white").drawCircle(0, 0, box.width/2).endFill().endStroke();
+      shape.x = box.x0 + box.width/2;
+      shape.y = box.y0 + box.height/2;
+      shape.cache(-box.width/2 - 2, -box.height/2 - 2, box.width + 4, 56);
+      shape.rotation = -135;
+      container.addChild(shape);
+      // setup textbox for temperature recording
+      thermometer.text = new createjs.Text("99", "16px Arial", "black");
+      thermometer.text.x = box.x0 + box.width + 9;
+      thermometer.text.y = box.y0;
+      container.addChild(thermometer.text);
     }
     return container;
   }
