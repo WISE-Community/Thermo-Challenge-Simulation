@@ -315,87 +315,16 @@ function setupSelectTrialGrid() {
  * Entry point to application
  * @param material values are in worldObjects.material:
  *   "Aluminum", "Wood", "Clay", "Plastic", "Styrofoam"
- * @param beverageTemperatureText starting beverage temperature:
+ * @param beverageTempText starting beverage temperature:
  *   "Hot", "Warm", "Cold"
- * @param airTemperatureText starting air temperature: "Hot", "Warm", "Cold"
+ * @param airTempText starting air temperature: "Hot", "Warm", "Cold"
  */
-function showTrial(material, beverageTemperatureText, airTemperatureText) {
-  let trialId =
-      getTrialId(material, beverageTemperatureText, airTemperatureText);
+function showTrial(material, beverageTempText, airTempText) {
+  let trialId = getTrialId(material, beverageTempText, airTempText);
   currentSimulation = new Simulation(trialId);
-  generateTrial(material, beverageTemperatureText, airTemperatureText);
-  showTrialRenderingBox(trialId);
-  showTrialIntialState(trialId);
-}
-
-function generateTrial(material, beverageTemperatureText, airTemperatureText) {
-  setupTrial(material, beverageTemperatureText, airTemperatureText);
-  runEntireTrial(material, beverageTemperatureText, airTemperatureText);
-}
-
-function setupTrial(material, bevTemperature, airTemperature) {
-  worldObjects.cups[0].material = material;
-  worldObjects.cups[0].liquid_temperature =
-      convertTempTextToTempNum(bevTemperature);
-  worldObjects.air.temperature = convertTempTextToTempNum(airTemperature);
-  world.ticks = 0;
-  currentTrialWorlds = [];
-  resetThermometers();
-  initWorld();
-}
-
-function runEntireTrial(material, beverageTemperatureText, airTemperatureText) {
-  let trialId =
-      getTrialId(material, beverageTemperatureText, airTemperatureText);
-  while (true) {
-    updateTemperatures();
-    recordTemperatures();
-    world.ticks++;
-    let worldCopy = {
-      heatShape: world.heatShape,
-      voxels: $.extend(true, [], world.voxels)
-    };
-    worldCopy.heatShape.parent = null;
-    currentTrialWorlds.push(worldCopy);
-
-    if (world.ticks >= worldSpecs.max_ticks) {
-      currentSimulation.allWorldData = currentTrialWorlds;
-      return;
-    }
-  }
-}
-
-/**
- * Updates temperatures based on neighbors (above, below, left, right)
- * To make it function like NetLogo we need to shuffle the voxels
- */
-function updateTemperatures () {
-  const indexArray = shuffledIndexArray(world.voxels.length);
-  for (let i = 0; i < world.voxels.length; i++) {
-    const index = indexArray[i];
-    const voxel = world.voxels[index];
-    const x = voxel.x;
-    const y = voxel.y;
-    const my_temp = voxel.temperature;
-    const my_con = voxel.conductivity;
-    let netFlowOfEnergy = 0;
-    const neighborIndices = [[x, y-1], [x+1, y],[x, y+1],[x-1, y]];
-    for (let j = 0; j < neighborIndices.length; j++) {
-      const neighbor = getVoxel(neighborIndices[j][0], neighborIndices[j][1]);
-      if (neighbor != null) {
-        const con = Math.min(neighbor.conductivity, my_con);
-        netFlowOfEnergy += worldSpecs.flow_speed * con / framerate
-            * (neighbor.temperature - my_temp) / worldSpecs.temperature_range;
-      }
-    }
-
-    voxel.temperature += worldSpecs.flow_speed * netFlowOfEnergy;
-    if (voxel.temperature < worldSpecs.temperature_min) {
-      voxel.temperature = worldSpecs.temperature_min;
-    } else if (voxel.temperature > worldSpecs.temperature_max) {
-      voxel.temperature = worldSpecs.temperature_max;
-    }
-  }
+  currentSimulation.generateTrial(material, beverageTempText, airTempText);
+  currentSimulation.showTrialRenderingBox();
+  currentSimulation.showTrialIntialState();
 }
 
 function shuffledIndexArray(n) {
@@ -410,57 +339,7 @@ function shuffledIndexArray(n) {
   return a;
 }
 
-function recordTemperatures() {
-  let seriesCount = 0;
-  for (const thermometer of worldObjects.thermometers) {
-    const voxel = getVoxel(thermometer.x, thermometer.y);
-    thermometer.temperature = voxel.temperature;
-    thermometer.text.text = voxel.temperature.toFixed(1) + " °C";
-    if (thermometer.saveSeries != null && thermometer.saveSeries &&
-      (world.ticks % 30 == 0)) {
-      currentSimulation.data.push({x:world.ticks / worldSpecs.max_ticks * 60, y:voxel.temperature});
-      seriesCount++;
-    }
-  }
-}
-
 let currentSimulation;
-let currentStage;
-
-function showTrialRenderingBox(trialId) {
-  $("#trial").empty();
-  $("#trial").append('<h2>' + trialId + '</h2>');
-  $("#trial").append('<div><canvas id="canvas_' + trialId + '" width="210" height="310" style="background-color:#eeeeef"></canvas><canvas id="colorLegend_' + trialId + '" width="100" height="310" style="background-color:#eeeeef"></canvas></div>');
-  $("#trial").append('<input id="showWorldsSlider_' + trialId + '" style="width:400px" type="range" min="0" max="300" step="1" value="0"/>');
-  $("#trial").append('<br/>');
-  $("#trial").append('<input id="playPauseWorld_' + trialId + '" type="button" value="Play"/>');
-  $("#trial").append('<span style="margin-left:10px" id="timePlaying_' + trialId + '"></span>');
-
-  initTemperatureColorLegend(trialId);
-  currentStage = new createjs.Stage($("#canvas_" + trialId)[0]);
-
-
-  $("#showWorldsSlider_" + trialId).attr("max", 899);
-  $("#showWorldsSlider_" + trialId).on("input", function() {
-    let tickLocation = $(this).val();
-    currentSimulation.showTrialAtTick(tickLocation);
-    currentSimulation.currentTick = tickLocation;
-    currentSimulation.showTime();
-    if (!currentSimulation.isSimulationPlaying()) {
-      WISE_onTick(getClosestTickTo30(tickLocation));
-    }
-  });
-  $("#playPauseWorld_" + trialId).on("click", function() {
-    let playPauseState = $(this).val();
-    if (playPauseState === "Play") {
-      currentSimulation.playSimulation();
-    } else if (playPauseState === "Replay") {
-      currentSimulation.replaySimulation();
-    } else {
-      currentSimulation.pauseSimulation();
-    }
-  });
-}
 
 function getClosestTickTo30(tick) {
   return Math.floor(tick / 30) * 30;
@@ -476,6 +355,7 @@ class Simulation {
     this.maxDurationMinutes = 60;
     this.data = [];
     this.allWorldData = [];
+    this.currentStage;
   }
 
   isSimulationPlaying() {
@@ -524,7 +404,7 @@ class Simulation {
   }
 
   showTrialAtTick(tick) {
-    currentStage.removeAllChildren();
+    this.currentStage.removeAllChildren();
     let worldData = this.allWorldData[tick];
     let world = new createjs.Container();
     let heatShape = new createjs.Shape();
@@ -549,21 +429,137 @@ class Simulation {
       thermometer.temperature = voxel.temperature;
       thermometer.text.text = voxel.temperature.toFixed(1) + " °C";
     }
-    currentStage.addChild(world);
-    currentStage.update();
+    this.currentStage.addChild(world);
+    this.currentStage.update();
     updateTrialsPlayed(currentSimulation.trialId, tick);
     if (isShowSelectTrialGrid()) {
       updateSelectTrialGrid(currentSimulation.trialId);
     }
     WISE_onTick(tick);
   }
+
+  showTrialRenderingBox() {
+    $("#trial").empty();
+    $("#trial").append('<h2>' + this.trialId + '</h2>');
+    $("#trial").append('<div><canvas id="canvas_' + this.trialId + '" width="210" height="310" style="background-color:#eeeeef"></canvas><canvas id="colorLegend_' + this.trialId + '" width="100" height="310" style="background-color:#eeeeef"></canvas></div>');
+    $("#trial").append('<input id="showWorldsSlider_' + this.trialId + '" style="width:400px" type="range" min="0" max="300" step="1" value="0"/>');
+    $("#trial").append('<br/>');
+    $("#trial").append('<input id="playPauseWorld_' + this.trialId + '" type="button" value="Play"/>');
+    $("#trial").append('<span style="margin-left:10px" id="timePlaying_' + this.trialId + '"></span>');
+
+    initTemperatureColorLegend(this.trialId);
+    this.currentStage = new createjs.Stage($("#canvas_" + this.trialId)[0]);
+
+    $("#showWorldsSlider_" + this.trialId).attr("max", 899);
+    $("#showWorldsSlider_" + this.trialId).on("input", function() {
+      let tickLocation = $(this).val();
+      currentSimulation.showTrialAtTick(tickLocation);
+      currentSimulation.currentTick = tickLocation;
+      currentSimulation.showTime();
+      if (!currentSimulation.isSimulationPlaying()) {
+        WISE_onTick(getClosestTickTo30(tickLocation));
+      }
+    });
+    $("#playPauseWorld_" + this.trialId).on("click", function() {
+      let playPauseState = $(this).val();
+      if (playPauseState === "Play") {
+        currentSimulation.playSimulation();
+      } else if (playPauseState === "Replay") {
+        currentSimulation.replaySimulation();
+      } else {
+        currentSimulation.pauseSimulation();
+      }
+    });
+  }
+
+  generateTrial(material, beverageTemperatureText, airTemperatureText) {
+    this.setupTrial(material, beverageTemperatureText, airTemperatureText);
+    this.runEntireTrial();
+  }
+
+  setupTrial(material, bevTemperature, airTemperature) {
+    worldObjects.cups[0].material = material;
+    worldObjects.cups[0].liquid_temperature =
+      convertTempTextToTempNum(bevTemperature);
+    worldObjects.air.temperature = convertTempTextToTempNum(airTemperature);
+    world.ticks = 0;
+    currentTrialWorlds = [];
+    resetThermometers();
+    initWorld();
+  }
+
+
+  runEntireTrial() {
+    while (true) {
+      this.updateTemperatures();
+      this.recordTemperatures();
+      world.ticks++;
+      let worldCopy = {
+        heatShape: world.heatShape,
+        voxels: $.extend(true, [], world.voxels)
+      };
+      worldCopy.heatShape.parent = null;
+      currentTrialWorlds.push(worldCopy);
+
+      if (world.ticks >= worldSpecs.max_ticks) {
+        currentSimulation.allWorldData = currentTrialWorlds;
+        return;
+      }
+    }
+  }
+
+  /**
+   * Updates temperatures based on neighbors (above, below, left, right)
+   * To make it function like NetLogo we need to shuffle the voxels
+   */
+  updateTemperatures () {
+    const indexArray = shuffledIndexArray(world.voxels.length);
+    for (let i = 0; i < world.voxels.length; i++) {
+      const index = indexArray[i];
+      const voxel = world.voxels[index];
+      const x = voxel.x;
+      const y = voxel.y;
+      const my_temp = voxel.temperature;
+      const my_con = voxel.conductivity;
+      let netFlowOfEnergy = 0;
+      const neighborIndices = [[x, y-1], [x+1, y],[x, y+1],[x-1, y]];
+      for (let j = 0; j < neighborIndices.length; j++) {
+        const neighbor = getVoxel(neighborIndices[j][0], neighborIndices[j][1]);
+        if (neighbor != null) {
+          const con = Math.min(neighbor.conductivity, my_con);
+          netFlowOfEnergy += worldSpecs.flow_speed * con / framerate
+            * (neighbor.temperature - my_temp) / worldSpecs.temperature_range;
+        }
+      }
+
+      voxel.temperature += worldSpecs.flow_speed * netFlowOfEnergy;
+      if (voxel.temperature < worldSpecs.temperature_min) {
+        voxel.temperature = worldSpecs.temperature_min;
+      } else if (voxel.temperature > worldSpecs.temperature_max) {
+        voxel.temperature = worldSpecs.temperature_max;
+      }
+    }
+  }
+
+  recordTemperatures() {
+    let seriesCount = 0;
+    for (const thermometer of worldObjects.thermometers) {
+      const voxel = getVoxel(thermometer.x, thermometer.y);
+      thermometer.temperature = voxel.temperature;
+      thermometer.text.text = voxel.temperature.toFixed(1) + " °C";
+      if (thermometer.saveSeries != null && thermometer.saveSeries &&
+        (world.ticks % 30 == 0)) {
+        currentSimulation.data.push({x:world.ticks / worldSpecs.max_ticks * 60, y:voxel.temperature});
+        seriesCount++;
+      }
+    }
+  }
+
+  showTrialIntialState() {
+    this.showTrialAtTick(0);
+  }
+
 }
-
-
-function showTrialIntialState(trialId) {
-  currentSimulation.showTrialAtTick(0);
-}
-
 
 function updateTrialsPlayed(trialId, tick) {
   if (trialsPlayed[trialId] == null) {
