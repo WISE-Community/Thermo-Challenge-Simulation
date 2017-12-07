@@ -839,7 +839,7 @@ function WISE_onTick(tick) {
 }
 
 function getCurrentCupMaterialColor() {
-  return worldObjects.materials[worldObjects.cups[0].material].color;
+  return worldObjects.materials[worldObjects.cups[0].material].stroke_color;
 }
 
 function getWorldState(tick) {
