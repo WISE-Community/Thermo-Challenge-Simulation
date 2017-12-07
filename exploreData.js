@@ -256,7 +256,7 @@ function drawLiquidAndCupBorders() {
     const cup = worldObjects.cups[i];
     const topLeft = voxelToPixels(cup.x, cup.y + cup.height-1);
     const outline = cup.outline;
-    const color = cup.material != null && cup.material.length > 0 ? (worldObjects.materials[cup.material].stroke_color != null ? worldObjects.materials[cup.material].stroke_color: worldObjects.materials[cup.material].color) : "#444444";
+    const color = getCupMaterialColor(cup);
     outline.graphics.clear().setStrokeStyle(1).beginStroke(color)
         .drawRect(topLeft.x0, topLeft.y0, cup.width*worldSpecs.voxel_width, cup.height*worldSpecs.voxel_height).endStroke();
 
@@ -265,6 +265,10 @@ function drawLiquidAndCupBorders() {
         .drawRect(iTopLeft.x0, iTopLeft.y0, (cup.width-2*cup.thickness)*worldSpecs.voxel_width, (cup.height-2*cup.thickness)*worldSpecs.voxel_height).endStroke();
     outline.cache(topLeft.x0 - 1, topLeft.y0 - 1, cup.width * worldSpecs.voxel_width + 2, cup.height * worldSpecs.voxel_height + 2);
   }
+}
+
+function getCupMaterialColor(cup) {
+  return cup.material != null && cup.material.length > 0 ? (worldObjects.materials[cup.material].stroke_color != null ? worldObjects.materials[cup.material].stroke_color: worldObjects.materials[cup.material].color) : "#444444";
 }
 
 function initializeThermometers(world) {
@@ -319,10 +323,10 @@ function setupSelectTrialGrid() {
 function showTrial(material, beverageTemperatureText, airTemperatureText) {
   let trialId =
       getTrialId(material, beverageTemperatureText, airTemperatureText);
+  showTrialRenderingBox(trialId);
   if (!trialAlreadyExists(trialId)) {
     generateTrial(material, beverageTemperatureText, airTemperatureText);
   }
-  showTrialRenderingBox(trialId);
   showTrialIntialState(trialId);
 }
 
@@ -409,10 +413,16 @@ function shuffledIndexArray(n) {
 }
 
 function recordTemperatures() {
+  let seriesCount = 0;
   for (const thermometer of worldObjects.thermometers) {
     const voxel = getVoxel(thermometer.x, thermometer.y);
     thermometer.temperature = voxel.temperature;
     thermometer.text.text = voxel.temperature.toFixed(1) + " °C";
+    if (thermometer.saveSeries != null && thermometer.saveSeries &&
+      (world.ticks % 30 == 0)) {
+      currentSimulation.data.push({x:world.ticks / worldSpecs.max_ticks * 60, y:voxel.temperature});
+      seriesCount++;
+    }
   }
 }
 
@@ -433,13 +443,15 @@ function showTrialRenderingBox(trialId) {
   currentStage = new createjs.Stage($("#canvas_" + trialId)[0]);
 
 
-  $("#showWorldsSlider_" + trialId).attr("max",
-      allTrialsWorlds[trialId].length - 1);
-  $("#showWorldsSlider_" + trialId).on("input change", function() {
+  $("#showWorldsSlider_" + trialId).attr("max", 899);
+  $("#showWorldsSlider_" + trialId).on("input", function() {
     let tickLocation = $(this).val();
     showTrialAtTick(trialId, tickLocation);
     currentSimulation.currentTick = tickLocation;
     currentSimulation.showTime();
+    if (!currentSimulation.isSimulationPlaying()) {
+      WISE_onTick(getClosestTickTo30(tickLocation));
+    }
   });
   $("#playPauseWorld_" + trialId).on("click", function() {
     let playPauseState = $(this).val();
@@ -453,6 +465,10 @@ function showTrialRenderingBox(trialId) {
   });
 }
 
+function getClosestTickTo30(tick) {
+  return Math.floor(tick / 30) * 30;
+}
+
 class Simulation {
   constructor(trialId) {
     this.trialId = trialId;
@@ -461,6 +477,11 @@ class Simulation {
     this.timeout_sleep_duration_ms = 10;
     this.maxTicks = worldSpecs.max_ticks;
     this.maxDurationMinutes = 60;
+    this.data = [];
+  }
+
+  isSimulationPlaying() {
+    return this.intervalId != null;
   }
 
   playSimulation() {
@@ -487,11 +508,13 @@ class Simulation {
 
   pauseSimulation() {
     clearInterval(this.intervalId);
+    this.intervalId = null;
     $("#playPauseWorld_" + this.trialId).val("Play");
   }
 
   replaySimulation() {
     clearInterval(this.intervalId);
+    this.intervalId = null;
     this.currentTick = 0;
     this.playSimulation();
   }
@@ -540,6 +563,7 @@ function showTrialAtTick(trialId, tick) {
   if (isShowSelectTrialGrid()) {
     updateSelectTrialGrid(trialId);
   }
+  WISE_onTick(tick);
 }
 
 function updateTrialsPlayed(trialId, tick) {
@@ -795,6 +819,53 @@ function getXPercentage(componentState) {
 function getMaxX(componentState) {
   return componentState.studentData.xAxis.max;
 }
+
+function WISE_onTick(tick) {
+  if (tick % 30 === 0) {
+    const componentState = {
+      messageType: 'studentDataChanged',
+      isAutoSave: false,
+      isSubmit: false,
+      studentData: getWorldState(tick)
+    };
+    componentState.timestamp = new Date().getTime();
+    console.log(componentState.studentData.trial);
+    try {
+      parent.postMessage(componentState, "*");
+    } catch(err) {
+      console.log("not posted");
+    }
+  }
+}
+
+function getCurrentCupMaterialColor() {
+  return worldObjects.materials[worldObjects.cups[0].material].color;
+}
+
+function getWorldState(tick) {
+  const seriesArray = [{
+    id: currentSimulation.trialId,
+    name:  currentSimulation.trialId,
+    color: getCurrentCupMaterialColor(),
+    data: currentSimulation.data.slice(0, tick / 30 + 1)
+  }];
+
+  const state = {
+    ticks: world.ticks,
+    material0: worldObjects.cups[0].material,
+    material0_initial_temperature: worldObjects.cups[0].material_temperature,
+    liquid_initial_temperature: worldObjects.cups[0].liquid_initial_temperature,
+    air_initial_temperature:worldObjects.air.temperature,
+    trial: {
+      id: currentSimulation.trialId,
+      name:  currentSimulation.trialId,
+      series: seriesArray
+    }
+  };
+
+  return state;
+}
+
 
 // listen for messages from the parent
 window.addEventListener('message', receiveMessage);
