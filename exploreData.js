@@ -535,22 +535,22 @@ function showTrialAtTick(trialId, tick) {
   currentStage.removeAllChildren();
   let worldData = allTrialsWorlds[trialId][tick];
   let world = new createjs.Container();
-  world.heatShape = worldData.heatShape;
-  world.addChild(worldData.heatShape);
+  let heatShape = new createjs.Shape();
+
+  for (const voxel of worldData.voxels) {
+    const hsl = tempToHSL(voxel.temperature);
+    const heat_color = "hsla(" + hsl.h + ", " + hsl.s + ", " + hsl.l + ", 1.0)";
+    const stroke_color = "hsla(" + hsl.h + ", 50%, " + hsl.l + ", 1.0)";
+    const box = voxelToPixels(voxel.x, voxel.y);
+    heatShape.graphics.setStrokeStyle(0.5)
+        .beginStroke(stroke_color).beginFill(heat_color)
+        .drawRect(box.x0, box.y0, box.width, box.height).endFill().endStroke();
+  }
+  world.addChild(heatShape);
+
   initializeOutlines(world);
   initializeThermometers(world);
   drawLiquidAndCupBorders();
-
-  worldData.heatShape.graphics.clear();
-  for (const voxel of worldData.voxels) {
-    const hsl = tempToHSL(voxel.temperature);
-    voxel.heat_color = "hsla(" + hsl.h + ", " + hsl.s + ", " + hsl.l + ", 1.0)";
-    voxel.stroke_color = "hsla(" + hsl.h + ", 50%, " + hsl.l + ", 1.0)";
-    const box = voxelToPixels(voxel.x, voxel.y);
-    worldData.heatShape.graphics.setStrokeStyle(0.5)
-        .beginStroke(voxel.stroke_color).beginFill(voxel.heat_color)
-        .drawRect(box.x0, box.y0, box.width, box.height).endFill().endStroke();
-  }
 
   for (const thermometer of worldObjects.thermometers) {
     const voxel = worldData.voxels[getVoxelIndex(thermometer.x, thermometer.y)];
@@ -829,7 +829,6 @@ function WISE_onTick(tick) {
       studentData: getWorldState(tick)
     };
     componentState.timestamp = new Date().getTime();
-    console.log(componentState.studentData.trial);
     try {
       parent.postMessage(componentState, "*");
     } catch(err) {
