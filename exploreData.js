@@ -417,6 +417,7 @@ function recordTemperatures() {
 }
 
 let currentSimulation;
+let currentStage;
 
 function showTrialRenderingBox(trialId) {
   $("#trial").empty();
@@ -429,6 +430,8 @@ function showTrialRenderingBox(trialId) {
 
   initTemperatureColorLegend(trialId);
   currentSimulation = new Simulation(trialId);
+  currentStage = new createjs.Stage($("#canvas_" + trialId)[0]);
+
 
   $("#showWorldsSlider_" + trialId).attr("max",
       allTrialsWorlds[trialId].length - 1);
@@ -506,15 +509,14 @@ function showTrialIntialState(trialId) {
 }
 
 function showTrialAtTick(trialId, tick) {
+  currentStage.removeAllChildren();
   let worldData = allTrialsWorlds[trialId][tick];
-  let stage = new createjs.Stage($("#canvas_" + trialId)[0]);
   let world = new createjs.Container();
   world.heatShape = worldData.heatShape;
   world.addChild(worldData.heatShape);
   initializeOutlines(world);
   initializeThermometers(world);
   drawLiquidAndCupBorders();
-  stage.addChild(world);
 
   worldData.heatShape.graphics.clear();
   for (const voxel of worldData.voxels) {
@@ -532,7 +534,8 @@ function showTrialAtTick(trialId, tick) {
     thermometer.temperature = voxel.temperature;
     thermometer.text.text = voxel.temperature.toFixed(1) + " °C";
   }
-  stage.update();
+  currentStage.addChild(world);
+  currentStage.update();
   updateTrialsPlayed(trialId, tick);
   if (isShowSelectTrialGrid()) {
     updateSelectTrialGrid(trialId);
