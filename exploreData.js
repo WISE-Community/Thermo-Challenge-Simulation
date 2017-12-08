@@ -355,6 +355,9 @@ class Simulation {
     this.data = [];
     this.allWorldData = [];
     this.currentStage;
+    this.outlineContainer;
+    this.thermometers;
+    this.currentHeatShape;
   }
 
   isSimulationPlaying() {
@@ -403,29 +406,24 @@ class Simulation {
   }
 
   showTrialAtTick(tick) {
-    this.currentStage.removeAllChildren();
+    this.currentHeatShape.graphics.clear();
     let worldData = this.allWorldData[tick];
-    let world = new createjs.Container();
-    let heatShape = new createjs.Shape();
-    heatShape.graphics.setStrokeStyle(0.5);
     for (const voxel of worldData.voxels) {
       const hsl = tempToHSL(voxel.temperature);
       const heat_color = "hsla(" + hsl.h + ", " + hsl.s + ", " + hsl.l + ", 1.0)";
       const stroke_color = "hsla(" + hsl.h + ", 50%, " + hsl.l + ", 1.0)";
       const box = voxelToPixels(voxel.x, voxel.y);
-      heatShape.graphics.beginStroke(stroke_color).beginFill(heat_color)
-        .drawRect(box.x0, box.y0, box.width, box.height).endFill().endStroke();
+      this.currentHeatShape.graphics
+          .beginStroke(stroke_color).beginFill(heat_color)
+          .drawRect(box.x0, box.y0, box.width, box.height)
+          .endFill().endStroke();
     }
-    world.addChild(heatShape);
-    world.addChild(this.outlineContainer);
-    world.addChild(this.thermometers);
 
     for (const thermometer of worldObjects.thermometers) {
       const voxel = worldData.voxels[getVoxelIndex(thermometer.x, thermometer.y)];
       thermometer.temperature = voxel.temperature;
       thermometer.text.text = voxel.temperature.toFixed(1) + " °C";
     }
-    this.currentStage.addChild(world);
     this.currentStage.update();
     updateTrialsPlayed(currentSimulation.trialId, tick);
     if (isShowSelectTrialGrid()) {
@@ -445,8 +443,13 @@ class Simulation {
 
     initTemperatureColorLegend(this.trialId);
     this.currentStage = new createjs.Stage($("#canvas_" + this.trialId)[0]);
+    this.currentHeatShape = new createjs.Shape();
+    this.currentHeatShape.graphics.setStrokeStyle(0.5);
+    this.currentStage.addChild(this.currentHeatShape);
     this.outlineContainer = this.createOutlineContainer();
     this.thermometers = this.createThermometerContainer();
+    this.currentStage.addChild(this.outlineContainer);
+    this.currentStage.addChild(this.thermometers);
 
     $("#showWorldsSlider_" + this.trialId).attr("max", 899);
     $("#showWorldsSlider_" + this.trialId).on("input", function() {
@@ -671,22 +674,14 @@ function resetThermometers() {
  * information for the canvas {x0, y0, x1, y1, width, height}
  */
 function voxelToPixels(x, y) {
-  if (x >= worldSpecs.min_x &&
-      x <= worldSpecs.max_x &&
-      y >= worldSpecs.min_y &&
-      y <= worldSpecs.max_y) {
-    const box = {
-      x0: worldSpecs.width_px/2 + worldSpecs.voxel_width*x - worldSpecs.voxel_width/2,
-      y0: worldSpecs.height_px/2 - worldSpecs.voxel_height*y - worldSpecs.voxel_height/2,
-      x1: worldSpecs.width_px/2 + worldSpecs.voxel_width*x + worldSpecs.voxel_width/2,
-      y1: worldSpecs.height_px/2 - worldSpecs.voxel_height*y + worldSpecs.voxel_height/2,
-      width: worldSpecs.voxel_width,
-      height: worldSpecs.voxel_height
-    };
-    return box;
-  } else {
-    return null;
-  }
+  return {
+    x0: worldSpecs.width_px/2 + worldSpecs.voxel_width*x - worldSpecs.voxel_width/2,
+    y0: worldSpecs.height_px/2 - worldSpecs.voxel_height*y - worldSpecs.voxel_height/2,
+    x1: worldSpecs.width_px/2 + worldSpecs.voxel_width*x + worldSpecs.voxel_width/2,
+    y1: worldSpecs.height_px/2 - worldSpecs.voxel_height*y + worldSpecs.voxel_height/2,
+    width: worldSpecs.voxel_width,
+    height: worldSpecs.voxel_height
+  };
 }
 
 /**
