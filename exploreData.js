@@ -412,10 +412,11 @@ class Simulation {
       const hsl = tempToHSL(voxel.temperature);
       const heat_color = "hsla(" + hsl.h + ", " + hsl.s + ", " + hsl.l + ", 1.0)";
       const stroke_color = "hsla(" + hsl.h + ", 50%, " + hsl.l + ", 1.0)";
-      const box = voxelToPixels(voxel.x, voxel.y);
+      const rectXInitial = worldSpecs.width_px/2 + worldSpecs.voxel_width*voxel.x - worldSpecs.voxel_width/2;
+      const rectYInitial = worldSpecs.height_px/2 - worldSpecs.voxel_height*voxel.y - worldSpecs.voxel_height/2;
       this.currentHeatShape.graphics
           .beginStroke(stroke_color).beginFill(heat_color)
-          .drawRect(box.x0, box.y0, box.width, box.height)
+          .drawRect(rectXInitial, rectYInitial, worldSpecs.voxel_width, worldSpecs.voxel_height)
           .endFill().endStroke();
     }
 
@@ -434,12 +435,12 @@ class Simulation {
 
   showTrialRenderingBox() {
     $("#trial").empty();
+    $("#trial").append('<input id="playPauseWorld_' + this.trialId + '" type="button" value="Play"/>');
+    $("#trial").append('<input id="showWorldsSlider_' + this.trialId + '" style="width:400px" type="range" min="0" max="300" step="1" value="0"/>');
+    $("#trial").append('<span style="margin-left:10px" id="timePlaying_' + this.trialId + '"></span>');
+    $("#trial").append('<br/>');
     $("#trial").append('<h2>' + this.trialId + '</h2>');
     $("#trial").append('<div><canvas id="canvas_' + this.trialId + '" width="210" height="310" style="background-color:#eeeeef"></canvas><canvas id="colorLegend_' + this.trialId + '" width="100" height="310" style="background-color:#eeeeef"></canvas></div>');
-    $("#trial").append('<input id="showWorldsSlider_' + this.trialId + '" style="width:400px" type="range" min="0" max="300" step="1" value="0"/>');
-    $("#trial").append('<br/>');
-    $("#trial").append('<input id="playPauseWorld_' + this.trialId + '" type="button" value="Play"/>');
-    $("#trial").append('<span style="margin-left:10px" id="timePlaying_' + this.trialId + '"></span>');
 
     initTemperatureColorLegend(this.trialId);
     this.currentStage = new createjs.Stage($("#canvas_" + this.trialId)[0]);
@@ -765,10 +766,19 @@ function receiveMessage(message) {
         let componentState = messageData.componentState;
         if (componentState.componentType == 'Graph') {
           showModelStateFromGraphStudentWork(componentState);
+        } else if (componentState.componentType == 'Embedded' &&
+          componentState.studentData.gridsSelected) {
+            showModelStateFromEmbeddedGrid(componentState)
         }
       }
     }
   }
+}
+
+function showModelStateFromEmbeddedGrid(componentState) {
+  const lastTrial = componentState.studentData
+      .gridsSelected[componentState.studentData.gridsSelected.length - 1];
+  showTrial(lastTrial.material, lastTrial.bevTemp, lastTrial.airTemp);
 }
 
 /**

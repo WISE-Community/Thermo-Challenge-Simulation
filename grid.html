@@ -1,0 +1,105 @@
+<html>
+<head>
+  <title>Thermodynamics Challenge Explore Data</title>
+  <script src="jquery-1.11.1.min.js"></script>
+  <script src="grid.js"></script>
+  <style type="text/css">
+    .token {
+      width: 60px;
+      height: 60px;
+      line-height: 60px;
+      border: 2px solid gray;
+      margin-bottom: 5px;
+      margin-left: 5px;
+      text-align: center;
+      float: left;
+      background-color: #ffff0087;
+      cursor: pointer;
+      font-weight: bold;
+      -moz-border-radius: 60px;
+      -webkit-border-radius: 60px;
+      border-radius: 60px;
+    }
+
+    .squareclear {
+      width: 60px;
+      height: 60px;
+      line-height: 60px;
+      border: 1px dotted transparent;
+      margin-bottom: 5px;
+      margin-left: 5px;
+      text-align: center;
+      float: left;
+      color: black;
+    }
+
+    .squaredotted {
+      width: 60px;
+      height: 60px;
+      line-height: 60px;
+      border: 1px dotted gray;
+      margin-bottom: 5px;
+      margin-left: 5px;
+      text-align: center;
+      float: left;
+      color: gray;
+      background-color: #d3d3d369;
+    }
+
+    .squaredotted:hover {
+      cursor: pointer;
+      border: 1px solid black;
+    }
+
+    .selectedGrid {
+      border: 1px solid black;
+      background-color: yellow;
+    }
+
+    .trialCompleted {
+      background-image: url("images/greenCheck.png");
+      background-repeat: no-repeat;
+    }
+  </style>
+</head>
+<body onload="init()">
+<div id="selectTrialGrid">
+  <div style="float:left; display: none">
+    <div class="token" id="token1">1</div>
+  </div>
+  <div style="float:left;">
+    <div class="squareclear"></div>
+    <div class="squareclear">Aluminum</div>
+    <div class="squareclear">Wood</div>
+    <div class="squareclear">Styrofoam</div>
+    <div class="squareclear">Clay</div>
+    <div class="squareclear">Glass</div>
+    <div class="squareclear">Plastic</div>
+    <div style="clear:both"></div>
+    <div class="squareclear">Hot</div>
+    <div class="squaredotted snappable" bevTemp="Hot" airTemp="Warm" material="Aluminum"></div>
+    <div class="squaredotted snappable" bevTemp="Hot" airTemp="Warm" material="Wood"></div>
+    <div class="squaredotted snappable" bevTemp="Hot" airTemp="Warm" material="Styrofoam"></div>
+    <div class="squaredotted snappable" bevTemp="Hot" airTemp="Warm" material="Clay"></div>
+    <div class="squaredotted snappable" bevTemp="Hot" airTemp="Warm" material="Glass"></div>
+    <div class="squaredotted snappable" bevTemp="Hot" airTemp="Warm" material="Plastic"></div>
+    <div style="clear:both"></div>
+    <div class="squareclear">Warm</div>
+    <div class="squaredotted snappable" bevTemp="Warm" airTemp="Warm" material="Aluminum"></div>
+    <div class="squaredotted snappable" bevTemp="Warm" airTemp="Warm" material="Wood"></div>
+    <div class="squaredotted snappable" bevTemp="Warm" airTemp="Warm" material="Styrofoam"></div>
+    <div class="squaredotted snappable" bevTemp="Warm" airTemp="Warm" material="Clay"></div>
+    <div class="squaredotted snappable" bevTemp="Warm" airTemp="Warm" material="Glass"></div>
+    <div class="squaredotted snappable" bevTemp="Warm" airTemp="Warm" material="Plastic"></div>
+    <div style="clear:both"></div>
+    <div class="squareclear">Cold</div>
+    <div class="squaredotted snappable" bevTemp="Cold" airTemp="Warm" material="Aluminum"></div>
+    <div class="squaredotted snappable" bevTemp="Cold" airTemp="Warm" material="Wood"></div>
+    <div class="squaredotted snappable" bevTemp="Cold" airTemp="Warm" material="Styrofoam"></div>
+    <div class="squaredotted snappable" bevTemp="Cold" airTemp="Warm" material="Clay"></div>
+    <div class="squaredotted snappable" bevTemp="Cold" airTemp="Warm" material="Glass"></div>
+    <div class="squaredotted snappable" bevTemp="Cold" airTemp="Warm" material="Plastic"></div>
+  </div>
+</div>
+</body>
+</html>
