@@ -1,58 +1,168 @@
-const gridsSelected = [
-
-];
+let grids;
 
 function init() {
+  if (isCollectMode()) {
+    initCollectionGrid();
+  } else if (isInterpretMode()) {
+    initInterpretGrid();
+  }
+  window.addEventListener('message', messageReceived);
+}
+
+function initCollectionGrid() {
+  grids = new CollectionGrids();
   $(".squaredotted").click(function(event, ui) {
-    updateSelectedGrid($(this));
-    let material = $(this).attr("material");
-    let beverageTemperature = $(this).attr("bevTemp");
-    let airTemperature = $(this).attr("airTemp");
-    saveSelectionLocally(material, beverageTemperature, airTemperature);
-    saveSelectionToWISE(material, beverageTemperature, airTemperature);
-    showGridSelectionOrder();
+    grids.gridSelected($(this));
   });
 }
 
-function showGridSelectionOrder() {
-  let gridsWithCompletedTrials = 0;
-  for (let i = 0; i < gridsSelected.length; i++) {
-    const gridSelected = gridsSelected[i];
-    if (gridSelected.isTrialCompleted) {
-      gridsWithCompletedTrials++;
-      const grid = $('div[airTemp="' + gridSelected.airTemp + '"][bevTemp="' + gridSelected.bevTemp + '"][material="' + gridSelected.material + '"]')
-      grid.html(gridsWithCompletedTrials);
+function initInterpretGrid() {
+  grids = new InterpretGrids();
+  $(".squaredotted").click(function(event, ui) {
+    grids.gridSelected($(this));
+  });
+}
+
+function messageReceived(message) {
+  if (message != null) {
+    let messageData = message.data;
+    if (messageData != null) {
+      if (messageData.messageType == 'handleConnectedComponentStudentDataChanged') {
+        let componentState = messageData.componentState;
+        if (componentState.componentType == 'Embedded' &&
+          componentState.studentData.isTrialCompleted) {
+          grids.trialCompleted(componentState);
+        }
+      }
     }
   }
 }
 
-function updateSelectedGrid(selectedGrid) {
-  $(".squaredotted").removeClass("selectedGrid");
-  selectedGrid.addClass("selectedGrid");
-}
+class Grids {
+  constructor() {
+    this.gridsSelected = [];
+  }
 
-function saveSelectionLocally(material, bevTemp, airTemp) {
-  gridsSelected.push({
-    timestamp: new Date().getTime(),
-    material: material,
-    bevTemp: bevTemp,
-    airTemp: airTemp
-  });
-}
-
-function saveSelectionToWISE(material, bevTemp, airTemp) {
-  const componentState = {
-    messageType: 'studentDataChanged',
-    isAutoSave: false,
-    isSubmit: false,
-    timestamp: new Date().getTime(),
-    studentData: {
-      gridsSelected: gridsSelected,
+  showGridSelectionOrder() {
+    let gridsWithCompletedTrials = 0;
+    for (let i = 0; i < this.gridsSelected.length; i++) {
+      const gridSelected = this.gridsSelected[i];
+      if (gridSelected.isTrialCompleted) {
+        gridsWithCompletedTrials++;
+        const grid = this.getGridDOM(gridSelected.material, gridSelected.bevTemp, gridSelected.airTemp);
+        grid.html(gridsWithCompletedTrials);
+      }
     }
-  };
-  try {
-    parent.postMessage(componentState, "*");
-  } catch(err) {
-    console.log("not posted");
+  }
+
+  getGridDOM(material, bevTemp, airTemp) {
+    return $('div[material="' + material + '"][bevTemp="' + bevTemp + '"][airTemp="' + airTemp + '"]');
+  }
+
+  saveSelectionToWISE() {
+    const componentState = {
+      messageType: 'studentDataChanged',
+      isAutoSave: false,
+      isSubmit: false,
+      timestamp: new Date().getTime(),
+      studentData: {
+        gridsSelected: this.gridsSelected,
+      }
+    };
+    try {
+      parent.postMessage(componentState, "*");
+    } catch(err) {
+      console.log("not posted");
+    }
+  }
+
+  trialCompleted(componentState) {
+    const trialMaterial = componentState.studentData.materialText;
+    const trialBevTemp = componentState.studentData.bevTempText;
+    const trialAirTemp = componentState.studentData.airTempText;
+    for (let i = this.gridsSelected.length - 1; i >= 0; i--) {
+      const gridSelected = this.gridsSelected[i];
+      if (gridSelected.material === trialMaterial &&
+          gridSelected.bevTemp === trialBevTemp &&
+          gridSelected.airTemp === trialAirTemp) {
+        gridSelected.isTrialCompleted = true;
+        break;
+      }
+    }
+    this.showGridSelectionOrder();
   }
 }
+
+class CollectionGrids extends Grids {
+  constructor() {
+    super();
+  }
+
+  gridSelected(selectedGrid) {
+    this.onlyHighlightSelectedGrid(selectedGrid);
+
+    let material = selectedGrid.attr("material");
+    let beverageTemperature = selectedGrid.attr("bevTemp");
+    let airTemperature = selectedGrid.attr("airTemp");
+    this.saveSelectionLocally(material, beverageTemperature, airTemperature);
+    this.saveSelectionToWISE();
+    this.showGridSelectionOrder();
+  }
+
+  onlyHighlightSelectedGrid(selectedGrid) {
+    $(".squaredotted").removeClass("selectedGrid");
+    selectedGrid.addClass("selectedGrid");
+  }
+
+  saveSelectionLocally(material, bevTemp, airTemp) {
+    this.gridsSelected.push({
+      timestamp: new Date().getTime(),
+      material: material,
+      bevTemp: bevTemp,
+      airTemp: airTemp
+    });
+  }
+}
+
+class InterpretGrids extends Grids {
+  constructor() {
+    super();
+  }
+
+  gridSelected(selectedGrid) {
+    let material = selectedGrid.attr("material");
+    let beverageTemperature = selectedGrid.attr("bevTemp");
+    let airTemperature = selectedGrid.attr("airTemp");
+    this.updateGridsSelected(material, beverageTemperature, airTemperature);
+    this.saveSelectionToWISE();
+    this.highlightAllSelectedGrids();
+    this.showGridSelectionOrder();
+  }
+
+  highlightAllSelectedGrids() {
+    $(".squaredotted").removeClass("selectedGrid");
+    for (let selectedGrid of this.gridsSelected) {
+      this.getGridDOM(selectedGrid.material, selectedGrid.bevTemp, selectedGrid.airTemp)
+          .addClass("selectedGrid");
+    }
+  }
+
+  updateGridsSelected(material, bevTemp, airTemp) {
+    const indexOfTrial = this.gridsSelected.findIndex((trial) => {
+        return trial["material"] == material &&
+               trial["bevTemp"] == bevTemp &&
+               trial["airTemp"] == airTemp;
+    });
+    if (indexOfTrial >= 0) {
+      this.gridsSelected.splice(indexOfTrial, 1);
+    } else {
+      this.gridsSelected.push({
+        timestamp: new Date().getTime(),
+        material: material,
+        bevTemp: bevTemp,
+        airTemp: airTemp
+      });
+    }
+  }
+}
+

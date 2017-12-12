@@ -40,3 +40,13 @@ function isShowSelectTrialGrid() {
   const selectTrialMode = getURLParameters("selectTrialMode");
   return selectTrialMode == 'grid';
 }
+
+function isCollectMode() {
+  const mode = getURLParameters("mode");
+  return mode == 'collect';
+}
+
+function isInterpretMode() {
+  const mode = getURLParameters("mode");
+  return mode == 'interpret';
+}

@@ -319,9 +319,8 @@ function setupSelectTrialGrid() {
  * @param airTempText starting air temperature: "Hot", "Warm", "Cold"
  */
 function showTrial(material, beverageTempText, airTempText) {
-  let trialId = getTrialId(material, beverageTempText, airTempText);
-  currentSimulation = new Simulation(trialId);
-  currentSimulation.generateTrial(material, beverageTempText, airTempText);
+  currentSimulation = new Simulation(material, beverageTempText, airTempText);
+  currentSimulation.generateTrial();
   currentSimulation.showTrialRenderingBox();
   currentSimulation.showTrialIntialState();
 }
@@ -345,8 +344,11 @@ function getClosestTickTo30(tick) {
 }
 
 class Simulation {
-  constructor(trialId) {
-    this.trialId = trialId;
+  constructor(material, beverageTempText, airTempText) {
+    this.material = material;
+    this.beverageTempText = beverageTempText;
+    this.airTempText = airTempText;
+    this.trialId = getTrialId(material, beverageTempText, airTempText);
     this.currentTick = 0;
     this.intervalId;
     this.timeout_sleep_duration_ms = 10;
@@ -358,6 +360,7 @@ class Simulation {
     this.outlineContainer;
     this.thermometers;
     this.currentHeatShape;
+    this.ticksPlayed = [];
   }
 
   isSimulationPlaying() {
@@ -426,16 +429,13 @@ class Simulation {
       thermometer.text.text = voxel.temperature.toFixed(1) + " °C";
     }
     this.currentStage.update();
-    updateTrialsPlayed(currentSimulation.trialId, tick);
-    if (isShowSelectTrialGrid()) {
-      updateSelectTrialGrid(currentSimulation.trialId);
-    }
+    this.ticksPlayed.push(tick);
     WISE_onTick(tick);
   }
 
   showTrialRenderingBox() {
     $("#trial").empty();
-    $("#trial").append('<input id="playPauseWorld_' + this.trialId + '" type="button" value="Play"/>');
+    $("#trial").append('<input id="playPauseWorld_' + this.trialId + '" type="button" value="Play" style="display:none"/>');
     $("#trial").append('<input id="showWorldsSlider_' + this.trialId + '" style="width:400px" type="range" min="0" max="300" step="1" value="0"/>');
     $("#trial").append('<span style="margin-left:10px" id="timePlaying_' + this.trialId + '"></span>');
     $("#trial").append('<br/>');
@@ -474,16 +474,16 @@ class Simulation {
     });
   }
 
-  generateTrial(material, beverageTemperatureText, airTemperatureText) {
-    this.setupTrial(material, beverageTemperatureText, airTemperatureText);
+  generateTrial() {
+    this.setupTrial();
     this.runEntireTrial();
   }
 
-  setupTrial(material, bevTemperature, airTemperature) {
-    worldObjects.cups[0].material = material;
+  setupTrial() {
+    worldObjects.cups[0].material = this.material;
     worldObjects.cups[0].liquid_temperature =
-      convertTempTextToTempNum(bevTemperature);
-    worldObjects.air.temperature = convertTempTextToTempNum(airTemperature);
+      convertTempTextToTempNum(this.beverageTempText);
+    worldObjects.air.temperature = convertTempTextToTempNum(this.airTempText);
     world.ticks = 0;
     resetThermometers();
     initWorld();
@@ -615,22 +615,6 @@ class Simulation {
   }
 }
 
-function updateTrialsPlayed(trialId, tick) {
-  if (trialsPlayed[trialId] == null) {
-    trialsPlayed[trialId] = [];
-  }
-  trialsPlayed[trialId].push(tick);
-}
-
-function updateSelectTrialGrid(trialId) {
-  if (trialsPlayed[trialId].length > 50) {
-    let material = getTrialMaterial(trialId);
-    let liquidTemperature = getTrialLiquidTemperature(trialId);
-    let airTemperature = getTrialAirTemperature(trialId);
-    let currentTrialGrid = $("div[material=" + material + "][bevtemp=" + liquidTemperature + "][airtemp=" + airTemperature + "]");
-    currentTrialGrid.addClass("trialCompleted")
-  }
-}
 
 function getTrialId(material, bevTemperatureText, airTemperatureText) {
   return material + "-" + bevTemperatureText + "Bev" + "-" +
@@ -874,6 +858,11 @@ function WISE_onTick(tick) {
       isSubmit: false,
       studentData: getWorldState(tick)
     };
+
+    if (tick >= worldSpecs.max_ticks - 30) {
+      componentState.studentData.isTrialCompleted = true;
+    }
+
     componentState.timestamp = new Date().getTime();
     try {
       parent.postMessage(componentState, "*");
@@ -892,11 +881,15 @@ function getWorldState(tick) {
     id: currentSimulation.trialId,
     name:  currentSimulation.trialId,
     color: getCurrentCupMaterialColor(),
-    data: currentSimulation.data.slice(0, tick / 30 + 1)
+    data: currentSimulation.data.slice(0, tick / 30 + 1),
   }];
+
 
   const state = {
     ticks: world.ticks,
+    materialText: currentSimulation.material,
+    bevTempText: currentSimulation.beverageTempText,
+    airTempText: currentSimulation.airTempText,
     material0: worldObjects.cups[0].material,
     material0_initial_temperature: worldObjects.cups[0].material_temperature,
     liquid_initial_temperature: worldObjects.cups[0].liquid_initial_temperature,
@@ -907,6 +900,7 @@ function getWorldState(tick) {
       series: seriesArray
     }
   };
+
 
   return state;
 }
