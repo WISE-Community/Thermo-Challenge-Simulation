@@ -877,15 +877,8 @@ function getCurrentCupMaterialColor() {
 }
 
 function getWorldState(tick) {
-  const seriesArray = [{
-    id: currentSimulation.trialId,
-    name:  currentSimulation.trialId,
-    color: getCurrentCupMaterialColor(),
-    data: currentSimulation.data.slice(0, tick / 30 + 1),
-  }];
 
-
-  const state = {
+  const studentData = {
     ticks: world.ticks,
     materialText: currentSimulation.material,
     bevTempText: currentSimulation.beverageTempText,
@@ -894,15 +887,21 @@ function getWorldState(tick) {
     material0_initial_temperature: worldObjects.cups[0].material_temperature,
     liquid_initial_temperature: worldObjects.cups[0].liquid_initial_temperature,
     air_initial_temperature:worldObjects.air.temperature,
+    xPlotLine: tick / 30,
     trial: {
       id: currentSimulation.trialId,
       name:  currentSimulation.trialId,
-      series: seriesArray
+      series: [{
+        id: currentSimulation.trialId,
+        name:  currentSimulation.trialId,
+        color: getCurrentCupMaterialColor(),
+        data: currentSimulation.data.slice(0, tick / 30 + 1),
+      }]
     }
   };
 
 
-  return state;
+  return studentData;
 }
 
 

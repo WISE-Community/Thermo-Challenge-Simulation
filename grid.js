@@ -44,13 +44,15 @@ class Grids {
   }
 
   showGridSelectionOrder() {
-    let gridsWithCompletedTrials = 0;
+    let gridsWithCompletedTrials = [];
     for (let i = 0; i < this.gridsSelected.length; i++) {
       const gridSelected = this.gridsSelected[i];
-      if (gridSelected.isTrialCompleted) {
-        gridsWithCompletedTrials++;
-        const grid = this.getGridDOM(gridSelected.material, gridSelected.bevTemp, gridSelected.airTemp);
-        grid.html(gridsWithCompletedTrials);
+      const key = gridSelected.material + gridSelected.bevTemp + gridSelected.airTemp;
+      const grid = this.getGridDOM(gridSelected.material, gridSelected.bevTemp, gridSelected.airTemp);
+      if (gridSelected.isTrialCompleted && gridsWithCompletedTrials.indexOf(key) == -1) {
+        gridsWithCompletedTrials.push(key);
+        grid.html(gridsWithCompletedTrials.length);
+        grid.addClass("trialCompleted");
       }
     }
   }
