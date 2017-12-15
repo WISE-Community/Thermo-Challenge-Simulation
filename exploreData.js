@@ -92,6 +92,12 @@ let tempToHSLValues = {};
 function init() {
   initializeValues();
   stage = new createjs.Stage($("#canvas")[0]);
+  const material = getStartingMaterial();
+  const bevTemp = getStartingBevTemp();
+  const airTemp = getStartingAirTemp();
+  if (material != null && bevTemp != null && airTemp != null) {
+    showTrial(material, bevTemp, airTemp);
+  }
 }
 
 function initializeValues() {
