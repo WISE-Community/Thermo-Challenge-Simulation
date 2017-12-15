@@ -318,8 +318,9 @@ function setupSelectTrialGrid() {
  *   "Hot", "Warm", "Cold"
  * @param airTempText starting air temperature: "Hot", "Warm", "Cold"
  */
-function showTrial(material, beverageTempText, airTempText) {
-  currentSimulation = new Simulation(material, beverageTempText, airTempText);
+function showTrial(material, beverageTempText, airTempText, isCompleted) {
+  currentSimulation = new Simulation(material, beverageTempText, airTempText,
+      isCompleted);
   currentSimulation.generateTrial();
   currentSimulation.showTrialRenderingBox();
   currentSimulation.showTrialIntialState();
@@ -344,7 +345,7 @@ function getClosestTickTo30(tick) {
 }
 
 class Simulation {
-  constructor(material, beverageTempText, airTempText) {
+  constructor(material, beverageTempText, airTempText, isCompleted) {
     this.material = material;
     this.beverageTempText = beverageTempText;
     this.airTempText = airTempText;
@@ -361,6 +362,33 @@ class Simulation {
     this.thermometers;
     this.currentHeatShape;
     this.ticksPlayed = [];
+    if (isCompleted == null) {
+      this.isCompleted = false;
+    } else {
+      this.isCompleted = isCompleted;
+    }
+  }
+
+  getMaterial() {
+    return this.material;
+  }
+
+  getBeverageTemp() {
+    return this.beverageTempText;
+  }
+
+  getAirTemp() {
+    return this.airTempText;
+  }
+
+  isCurrentSimulation(material, beverageTempText, airTempText) {
+    if (material == this.getMaterial() &&
+        beverageTempText == this.getBeverageTemp() &&
+        airTempText == this.getAirTemp()) {
+      return true;
+    }
+
+    return false;
   }
 
   isSimulationPlaying() {
@@ -430,7 +458,37 @@ class Simulation {
     }
     this.currentStage.update();
     this.ticksPlayed.push(tick);
-    WISE_onTick(tick);
+    if (this.isCompleted) {
+      this.WISE_onTick(870);
+    } else {
+      this.WISE_onTick(tick);
+    }
+  }
+
+  WISE_onTick(tick) {
+    if (tick % 30 === 0) {
+      let studentData = getWorldState(tick);
+      if (this.isCompleted) {
+        studentData = getWorldState(870);
+      }
+      const componentState = {
+        messageType: 'studentDataChanged',
+        isAutoSave: false,
+        isSubmit: false,
+        studentData: studentData
+      };
+
+      if (tick >= worldSpecs.max_ticks - 30) {
+        componentState.studentData.isTrialCompleted = true;
+      }
+
+      componentState.timestamp = new Date().getTime();
+      try {
+        window.postMessage(componentState, "*");
+      } catch(err) {
+        console.log("not posted");
+      }
+    }
   }
 
   showTrialRenderingBox() {
@@ -459,7 +517,7 @@ class Simulation {
       currentSimulation.currentTick = tickLocation;
       currentSimulation.showTime();
       if (!currentSimulation.isSimulationPlaying()) {
-        WISE_onTick(getClosestTickTo30(tickLocation));
+        currentSimulation.WISE_onTick(getClosestTickTo30(tickLocation));
       }
     });
     $("#playPauseWorld_" + this.trialId).on("click", function() {
@@ -712,7 +770,7 @@ function tempToHSL(temperature) {
  * @param the message to send to the parent
  */
 function sendMessage(message) {
-  parent.postMessage(message, "*");
+  window.postMessage(message, "*");
 }
 
 /**
@@ -759,10 +817,39 @@ function receiveMessage(message) {
   }
 }
 
-function showModelStateFromEmbeddedGrid(componentState) {
+function showModelStateFromEmbeddedGrid0(componentState) {
   const lastTrial = componentState.studentData
       .gridsSelected[componentState.studentData.gridsSelected.length - 1];
-  showTrial(lastTrial.material, lastTrial.bevTemp, lastTrial.airTemp);
+
+  if (currentSimulation == null || !currentSimulation.isCurrentSimulation(
+      lastTrial.material, lastTrial.bevTemp, lastTrial.airTemp)) {
+    showTrial(lastTrial.material, lastTrial.bevTemp, lastTrial.airTemp);
+  }
+}
+
+function showModelStateFromEmbeddedGrid(componentState) {
+  let state = componentState.studentData.state;
+  if (state.selectedTrialIds.length > 0) {
+    let selectedTrialId = state.selectedTrialIds[state.selectedTrialIds.length - 1];
+    let parameters = getParametersFromTrialId(selectedTrialId);
+    let material = parameters.material;
+    let bevTemp = parameters.bevTemp;
+    let airTemp = parameters.airTemp;
+    if (currentSimulation == null ||
+        !currentSimulation.isCurrentSimulation(material, bevTemp, airTemp)) {
+      let isCompleted = state[bevTemp][material].isCompleted;
+      showTrial(material, bevTemp, airTemp, isCompleted);
+    }
+  }
+}
+
+function getParametersFromTrialId(trialId) {
+  let regEx = /(.*)-(.*)Bev-(.*)Air/;
+  let results = trialId.match(regEx);
+  let material = results[1];
+  let bevTemp = results[2];
+  let airTemp = results[3];
+  return { material: material, bevTemp: bevTemp, airTemp: airTemp };
 }
 
 /**
@@ -850,28 +937,6 @@ function getMaxX(componentState) {
   return componentState.studentData.xAxis.max;
 }
 
-function WISE_onTick(tick) {
-  if (tick % 30 === 0) {
-    const componentState = {
-      messageType: 'studentDataChanged',
-      isAutoSave: false,
-      isSubmit: false,
-      studentData: getWorldState(tick)
-    };
-
-    if (tick >= worldSpecs.max_ticks - 30) {
-      componentState.studentData.isTrialCompleted = true;
-    }
-
-    componentState.timestamp = new Date().getTime();
-    try {
-      parent.postMessage(componentState, "*");
-    } catch(err) {
-      console.log("not posted");
-    }
-  }
-}
-
 function getCurrentCupMaterialColor() {
   return worldObjects.materials[worldObjects.cups[0].material].stroke_color;
 }
@@ -887,7 +952,7 @@ function getWorldState(tick) {
     material0_initial_temperature: worldObjects.cups[0].material_temperature,
     liquid_initial_temperature: worldObjects.cups[0].liquid_initial_temperature,
     air_initial_temperature:worldObjects.air.temperature,
-    xPlotLine: tick / 30,
+    xPlotLine: tick * 2 / 30,
     trial: {
       id: currentSimulation.trialId,
       name:  currentSimulation.trialId,
