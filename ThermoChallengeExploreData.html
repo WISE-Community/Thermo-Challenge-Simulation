@@ -6,99 +6,11 @@
   <script src="jquery-1.11.1.min.js"></script>
   <script src="easel.js"></script>
   <script src="util.js"></script>
+  <script src="Simulation.js"></script>
   <script src="exploreData.js"></script>
 </head>
 <body onload="init()">
-<script type="text/javascript" src="http://code.jquery.com/ui/1.9.2/jquery-ui.js"></script>
-<script type="text/javascript" src="http://www.pureexample.com/js/lib/jquery.ui.touch-punch.min.js"></script>
-<style type="text/css">
-  .token {
-    width: 60px;
-    height: 60px;
-    line-height: 60px;
-    border: 2px solid gray;
-    margin-bottom: 5px;
-    margin-left: 5px;
-    text-align: center;
-    float: left;
-    background-color: #ffff0087;
-    cursor: pointer;
-    font-weight: bold;
-    -moz-border-radius: 60px;
-    -webkit-border-radius: 60px;
-    border-radius: 60px;
-  }
-
-  .squareclear {
-    width: 60px;
-    height: 60px;
-    line-height: 60px;
-    border: 1px dotted transparent;
-    margin-bottom: 5px;
-    margin-left: 5px;
-    text-align: center;
-    float: left;
-    color: black;
-  }
-
-  .squaredotted {
-    width: 60px;
-    height: 60px;
-    line-height: 60px;
-    border: 1px dotted gray;
-    margin-bottom: 5px;
-    margin-left: 5px;
-    text-align: center;
-    float: left;
-    color: gray;
-    background-color: #d3d3d369;
-  }
-
-  .trialCompleted {
-    background-image: url("images/greenCheck.png");
-    background-repeat: no-repeat;
-  }
-</style>
-<div id="selectTrialGrid" style="display:none">
-  <div style="float:left">
-    <div class="token" id="token1">1</div>
-  </div>
-  <div style="float:left; margin-left:50px;">
-    <div class="squareclear"></div>
-    <div class="squareclear">Aluminum</div>
-    <div class="squareclear">Wood</div>
-    <div class="squareclear">Styrofoam</div>
-    <div class="squareclear">Clay</div>
-    <div class="squareclear">Glass</div>
-    <div class="squareclear">Plastic</div>
-    <div style="clear:both"></div>
-    <div class="squareclear">Hot</div>
-    <div class="squaredotted snappable" bevTemp="Hot" airTemp="Warm" material="Aluminum"></div>
-    <div class="squaredotted snappable" bevTemp="Hot" airTemp="Warm" material="Wood"></div>
-    <div class="squaredotted snappable" bevTemp="Hot" airTemp="Warm" material="Styrofoam"></div>
-    <div class="squaredotted snappable" bevTemp="Hot" airTemp="Warm" material="Clay"></div>
-    <div class="squaredotted snappable" bevTemp="Hot" airTemp="Warm" material="Glass"></div>
-    <div class="squaredotted snappable" bevTemp="Hot" airTemp="Warm" material="Plastic"></div>
-    <div style="clear:both"></div>
-    <div class="squareclear">Warm</div>
-    <div class="squaredotted snappable" bevTemp="Warm" airTemp="Warm" material="Aluminum"></div>
-    <div class="squaredotted snappable" bevTemp="Warm" airTemp="Warm" material="Wood"></div>
-    <div class="squaredotted snappable" bevTemp="Warm" airTemp="Warm" material="Styrofoam"></div>
-    <div class="squaredotted snappable" bevTemp="Warm" airTemp="Warm" material="Clay"></div>
-    <div class="squaredotted snappable" bevTemp="Warm" airTemp="Warm" material="Glass"></div>
-    <div class="squaredotted snappable" bevTemp="Warm" airTemp="Warm" material="Plastic"></div>
-    <div style="clear:both"></div>
-    <div class="squareclear">Cold</div>
-    <div class="squaredotted snappable" bevTemp="Cold" airTemp="Warm" material="Aluminum"></div>
-    <div class="squaredotted snappable" bevTemp="Cold" airTemp="Warm" material="Wood"></div>
-    <div class="squaredotted snappable" bevTemp="Cold" airTemp="Warm" material="Styrofoam"></div>
-    <div class="squaredotted snappable" bevTemp="Cold" airTemp="Warm" material="Clay"></div>
-    <div class="squaredotted snappable" bevTemp="Cold" airTemp="Warm" material="Glass"></div>
-    <div class="squaredotted snappable" bevTemp="Cold" airTemp="Warm" material="Plastic"></div>
-  </div>
-</div>
-
-<canvas id="canvas" width="310" height="310" style="display: none; background-color:#eeeeef"></canvas>
+  <canvas id="canvas" width="310" height="310" style="display: none; background-color:#eeeeef"></canvas>
   <div id="trial"></div>
 </body>
 </html>
