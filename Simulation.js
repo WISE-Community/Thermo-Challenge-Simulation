@@ -15,6 +15,7 @@ class Simulation {
     this.outlineContainer;
     this.thermometers;
     this.currentHeatShape;
+    this.thermometerLegendStage;
     this.ticksPlayed = [];
     if (isCompleted == null) {
       this.isCompleted = false;
@@ -105,11 +106,7 @@ class Simulation {
         .endFill().endStroke();
     }
 
-    for (const thermometer of worldObjects.thermometers) {
-      const voxel = worldData.voxels[getVoxelIndex(thermometer.x, thermometer.y)];
-      thermometer.temperature = voxel.temperature;
-      thermometer.text.text = voxel.temperature.toFixed(1) + " °C";
-    }
+    this.showThermometerReadings(worldData);
     this.currentStage.update();
     this.ticksPlayed.push(tick);
     if (this.isCompleted) {
@@ -147,23 +144,26 @@ class Simulation {
 
   showTrialRenderingBox() {
     $("#trial").empty();
-    $("#trial").append('<input id="playPauseWorld_' + this.trialId + '" type="button" value="Play"/>');
-    $("#trial").append('<input id="showWorldsSlider_' + this.trialId + '" style="width:400px" type="range" min="0" max="300" step="1" value="0"/>');
-    $("#trial").append('<span style="margin-left:10px" id="timePlaying_' + this.trialId + '"></span>');
+    $("#trial").append(`<input id="playPauseWorld_${this.trialId}" type="button" value="Play"/>`);
+    $("#trial").append(`<input id="showWorldsSlider_${this.trialId}" style="width:400px" type="range" min="0" max="300" step="1" value="0"/>`);
+    $("#trial").append(`<span style="margin-left:10px" id="timePlaying_${this.trialId}"></span>`);
     $("#trial").append('<br/>');
-    $("#trial").append('<h2>' + this.trialId + '</h2>');
-    $("#trial").append('<div><canvas id="canvas_' + this.trialId + '" width="210" height="310" style="background-color:#eeeeef"></canvas><canvas id="colorLegend_' + this.trialId + '" width="100" height="310" style="background-color:#eeeeef"></canvas></div>');
+    $("#trial").append(`<h2>${this.trialId}</h2>`);
+    $("#trial").append(`<div>
+        <canvas id="canvas_${this.trialId}" width="210" height="310" style="background-color:#eeeeef"></canvas>
+        <canvas id="thermometerLegend" width="200" height="310" style="background-color:#eeeeef"></canvas>
+        </div>`);
 
-    initTemperatureColorLegend(this.trialId);
-    this.currentStage = new createjs.Stage($("#canvas_" + this.trialId)[0]);
+    this.showThermometerLegend();
+    this.currentStage = new createjs.Stage($(`#canvas_${this.trialId}`)[0]);
     this.currentHeatShape = new createjs.Shape();
     this.currentHeatShape.graphics.setStrokeStyle(0.5);
     this.currentStage.addChild(this.currentHeatShape);
     this.outlineContainer = this.showCupOutline();
     this.currentStage.addChild(this.outlineContainer);
 
-    $("#showWorldsSlider_" + this.trialId).attr("max", 899);
-    $("#showWorldsSlider_" + this.trialId).on("input", function() {
+    $(`#showWorldsSlider_${this.trialId}`).attr("max", 899);
+    $(`#showWorldsSlider_${this.trialId}`).on("input", function() {
       let tickLocation = $(this).val();
       currentSimulation.showTrialAtTick(tickLocation);
       currentSimulation.currentTick = tickLocation;
@@ -172,7 +172,7 @@ class Simulation {
         currentSimulation.WISE_onTick(getClosestTickTo30(tickLocation));
       }
     });
-    $("#playPauseWorld_" + this.trialId).on("click", function() {
+    $(`#playPauseWorld_${this.trialId}`).on("click", function() {
       let playPauseState = $(this).val();
       if (playPauseState === "Play") {
         currentSimulation.playSimulation();
@@ -182,6 +182,180 @@ class Simulation {
         currentSimulation.pauseSimulation();
       }
     });
+  }
+
+  showThermometerLegend() {
+    this.thermometerLegendStage = new createjs.Stage($("#thermometerLegend")[0]);
+    this.addLiquidTemperatureLabel();
+    this.addLiquidTemperatureHeatMap();
+    this.addLiquidTemperatureGaugeLine();
+    this.addLiquidTemperatureGaugeLabel();
+    this.addTemperatureLegendLabels();
+    this.addAirTemperatureLabel();
+    this.addAirTemperatureHeatMap();
+    this.addAirTemperatureGaugeLine();
+    this.addAirTemperatureGaugeLabel();
+    this.thermometerLegendStage.update();
+  }
+
+  addLiquidTemperatureLabel() {
+    const text = new createjs.Text("Liquid\nTemperature", "15px Arial", "#008833");
+    text.x = 5;
+    text.y = 5;
+    this.thermometerLegendStage.addChild(text);
+  }
+
+  addLiquidTemperatureHeatMap() {
+    const heatMapShape = this.createHeatMap();
+    heatMapShape.x = 30;
+    heatMapShape.y = 5;
+    heatMapShape.name = "liquidTempHeatMap";
+    this.thermometerLegendStage.addChild(heatMapShape);
+  }
+
+  addLiquidTemperatureGaugeLine() {
+    const gaugeLine = new createjs.Shape();
+    gaugeLine.name = "liquidTempGaugeLine";
+    gaugeLine.x = 20;
+    gaugeLine.y = 70;
+    const col = "hsl(0, 100%, 0%)";
+    const line_height_px = 5;
+    const line_width_px = 40;
+    gaugeLine.graphics.beginFill(col)
+      .drawRect(20, line_height_px, line_width_px, line_height_px).endFill();
+    this.thermometerLegendStage.addChild(gaugeLine);
+  }
+
+  addLiquidTemperatureGaugeLabel() {
+    const gaugeLabel = new createjs.Text("liquid temp", "15px Arial", "#008833");
+    gaugeLabel.name = "liquidTempGaugeLabel";
+    gaugeLabel.x = 5;
+    gaugeLabel.y = 70;
+    this.thermometerLegendStage.addChild(gaugeLabel);
+  }
+
+  updateLiquidTemperatureGaugeLabel(temperature) {
+    const gaugeLabel =
+      this.thermometerLegendStage.getChildByName("liquidTempGaugeLabel");
+    gaugeLabel.text = temperature.toFixed(1);
+    const heatMap =
+      this.thermometerLegendStage.getChildByName("liquidTempHeatMap");
+    const tempLabelYOffset = 52 + heatMap.height_px - (temperature / 100) * heatMap.height_px;
+    gaugeLabel.y = tempLabelYOffset;
+  }
+
+  updateLiquidTemperatureGaugeLine(temperature) {
+    const gaugeLine =
+      this.thermometerLegendStage.getChildByName("liquidTempGaugeLine");
+    const heatMap =
+      this.thermometerLegendStage.getChildByName("liquidTempHeatMap");
+    const tempLineYOffset = 52 + heatMap.height_px - (temperature / 100) * heatMap.height_px;
+    gaugeLine.y = tempLineYOffset;
+  }
+
+  addAirTemperatureGaugeLine() {
+    const gaugeLine = new createjs.Shape();
+    gaugeLine.name = "airTempGaugeLine";
+    gaugeLine.x = 100;
+    gaugeLine.y = 70;
+    const col = "hsl(0, 100%, 0%)";
+    const line_height_px = 5;
+    const line_width_px = 40;
+    gaugeLine.graphics.beginFill(col)
+      .drawRect(20, line_height_px, line_width_px, line_height_px).endFill();
+    this.thermometerLegendStage.addChild(gaugeLine);
+  }
+
+  addAirTemperatureGaugeLabel() {
+    const gaugeLabel = new createjs.Text("liquid temp", "15px Arial", "#008833");
+    gaugeLabel.name = "airTempGaugeLabel";
+    gaugeLabel.x = 165;
+    gaugeLabel.y = 70;
+    this.thermometerLegendStage.addChild(gaugeLabel);
+  }
+
+  updateAirTemperatureGaugeLabel(temperature) {
+    const gaugeLabel =
+      this.thermometerLegendStage.getChildByName("airTempGaugeLabel");
+    gaugeLabel.text = temperature.toFixed(1);
+    const heatMap =
+      this.thermometerLegendStage.getChildByName("airTempHeatMap");
+    const tempLabelYOffset = 52 + heatMap.height_px - (temperature / 100) * heatMap.height_px;
+    gaugeLabel.y = tempLabelYOffset;
+  }
+
+  updateAirTemperatureGaugeLine(temperature) {
+    const gaugeLine =
+      this.thermometerLegendStage.getChildByName("airTempGaugeLine");
+    const heatMap =
+      this.thermometerLegendStage.getChildByName("airTempHeatMap");
+    const tempLineYOffset = 52 + heatMap.height_px - (temperature / 100) * heatMap.height_px;
+    gaugeLine.y = tempLineYOffset;
+  }
+
+  addAirTemperatureLabel() {
+    const text = new createjs.Text("Air\nTemperature", "15px Arial", "#008833");
+    text.x = 105;
+    text.y = 5;
+    this.thermometerLegendStage.addChild(text);
+  }
+
+  addTemperatureLegendLabels() {
+    const container = new createjs.Container();
+    container.height_px = 200;
+    container.width_px = 30;
+    for (let t = worldSpecs.temperature_max; t >= worldSpecs.temperature_min; t--) {
+      const height_px = container.height_px / (worldSpecs.temperature_range+1);
+      if (t % 20 == 0) {
+        const text = new createjs.Text(t + " °C", "13px Arial", "#008833");
+        text.x = container.width_px;
+        text.y = 60 + (worldSpecs.temperature_max - t) * height_px - 6;
+        container.addChild(text);
+      }
+    }
+    container.x = 55;
+    this.thermometerLegendStage.addChild(container);
+  }
+
+  addAirTemperatureHeatMap() {
+    const heatMapShape = this.createHeatMap();
+    heatMapShape.x = 110;
+    heatMapShape.y = 5;
+    heatMapShape.name = "airTempHeatMap";
+    this.thermometerLegendStage.addChild(heatMapShape);
+  }
+
+  createHeatMap() {
+    const colorMapShape = new createjs.Shape();
+    colorMapShape.height_px = 200;
+    colorMapShape.width_px = 20;
+    for (let t = worldSpecs.temperature_max; t >= worldSpecs.temperature_min; t--) {
+      const hsl = tempToHSL(t);
+      const col = "hsl(" + hsl.h + "," + hsl.s + "," + hsl.l + ")";
+      const height_px = colorMapShape.height_px / (worldSpecs.temperature_range+1);
+      colorMapShape.graphics.beginFill(col)
+        .drawRect(20, 60 + (worldSpecs.temperature_max - t) * height_px, colorMapShape.width_px, height_px).endFill();
+    }
+    colorMapShape.cache(20, 60, colorMapShape.width_px, colorMapShape.height_px);
+    return colorMapShape;
+  }
+
+  showThermometerReadings(worldData) {
+    for (const thermometer of worldObjects.thermometers) {
+      const voxel = worldData.voxels[getVoxelIndex(thermometer.x, thermometer.y)];
+      this.showThermometerReading(thermometer.id, voxel.temperature)
+    }
+    this.thermometerLegendStage.update();
+  }
+
+  showThermometerReading(thermometerId, temperature) {
+    if (thermometerId === 'beverage') {
+      this.updateLiquidTemperatureGaugeLine(temperature);
+      this.updateLiquidTemperatureGaugeLabel(temperature);
+    } else if (thermometerId === 'air') {
+      this.updateAirTemperatureGaugeLine(temperature);
+      this.updateAirTemperatureGaugeLabel(temperature);
+    }
   }
 
   generateTrial() {
@@ -221,7 +395,7 @@ class Simulation {
    * Updates temperatures based on neighbors (above, below, left, right)
    * To make it function like NetLogo we need to shuffle the voxels
    */
-  updateTemperatures () {
+  updateTemperatures() {
     const indexArray = shuffledIndexArray(world.voxels.length);
     for (let i = 0; i < world.voxels.length; i++) {
       const index = indexArray[i];
@@ -284,13 +458,18 @@ class Simulation {
       outline.cache(topLeft.x0 - 1, topLeft.y0 - 1, cup.width * worldSpecs.voxel_width + 2, cup.height * worldSpecs.voxel_height + 2);
       container.addChild(outline);
 
-      let cupText = new createjs.Text("Cup", "12px Arial", "black");
+      let airText = new createjs.Text("Air", "14px Arial", "black");
+      airText.x = topLeft.x0 + cup.width*worldSpecs.voxel_width/2-10;
+      airText.y = topLeft.y0 - 50;
+      container.addChild(airText);
+
+      let cupText = new createjs.Text("Cup", "14px Arial", "black");
       cupText.x = topLeft.x0 + cup.width*worldSpecs.voxel_width/2-10;
       cupText.y = topLeft.y0 + 5;
       container.addChild(cupText);
 
       topLeft = voxelToPixels(cup.x+cup.thickness, cup.y+cup.height-1-cup.thickness);
-      let liquidText = new createjs.Text("Liquid", "12px Arial", "black");
+      let liquidText = new createjs.Text("Liquid", "14px Arial", "black");
       liquidText.x = topLeft.x0 + (cup.width-2*cup.thickness)*worldSpecs.voxel_width/2-12;
       liquidText.y = topLeft.y0 + (cup.height-cup.thickness)*worldSpecs.voxel_height/2-2;
       container.addChild(liquidText);

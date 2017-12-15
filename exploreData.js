@@ -23,8 +23,8 @@ const worldSpecs = {
  */
 const worldObjects = {
   thermometers:[
-    { x:0, y:-1, color:"#00FF00", saveSeries:true },
-    { x:0, y:7, color:"#FF00DD" }
+    { x:0, y:-1, color:"#00FF00", saveSeries:true, id:"beverage" },
+    { x:0, y:7, color:"#FF00DD", id:"air" }
   ],
   cups: [
     {
@@ -92,38 +92,6 @@ let tempToHSLValues = {};
 function init() {
   initializeValues();
   stage = new createjs.Stage($("#canvas")[0]);
-}
-
-function initTemperatureColorLegend(trialId) {
-  const stage = new createjs.Stage($("#colorLegend_" + trialId)[0]);
-  const colorMap = new createjs.Container();
-  const text = new createjs.Text("Temperature \nColors", "16px Arial", "#008833");
-  text.x = 0;
-  text.y = 0;
-  colorMap.addChild(text);
-  colorMap.shape = new createjs.Shape();
-  colorMap.addChild(colorMap.shape);
-  colorMap.shape.height_px = 200;
-  colorMap.shape.width_px = 20;
-  for (let t = worldSpecs.temperature_max; t >= worldSpecs.temperature_min; t--) {
-    const hsl = tempToHSL(t);
-    const col = "hsl(" + hsl.h + "," + hsl.s + "," + hsl.l + ")";
-    const height_px = colorMap.shape.height_px / (worldSpecs.temperature_range+1);
-    colorMap.shape.graphics.beginFill(col)
-        .drawRect(20, 60 + (worldSpecs.temperature_max - t) * height_px, colorMap.shape.width_px, height_px).endFill();
-
-    if (t % 20 == 0) {
-      const text = new createjs.Text(t+ " °C", "14px Arial", "#008833");
-      text.x = 20 + colorMap.shape.width_px + 4;
-      text.y = 60 + (worldSpecs.temperature_max - t) * height_px - 6;
-      colorMap.addChild(text);
-    }
-  }
-  colorMap.shape.cache(20, 60, colorMap.shape.width_px, colorMap.shape.height_px);
-  colorMap.x = 5;
-  colorMap.y = 5;
-  stage.addChild(colorMap);
-  stage.update();
 }
 
 function initializeValues() {
