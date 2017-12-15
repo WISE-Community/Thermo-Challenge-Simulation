@@ -147,7 +147,7 @@ class Simulation {
 
   showTrialRenderingBox() {
     $("#trial").empty();
-    $("#trial").append('<input id="playPauseWorld_' + this.trialId + '" type="button" value="Play" style="display:none"/>');
+    $("#trial").append('<input id="playPauseWorld_' + this.trialId + '" type="button" value="Play"/>');
     $("#trial").append('<input id="showWorldsSlider_' + this.trialId + '" style="width:400px" type="range" min="0" max="300" step="1" value="0"/>');
     $("#trial").append('<span style="margin-left:10px" id="timePlaying_' + this.trialId + '"></span>');
     $("#trial").append('<br/>');
@@ -159,10 +159,8 @@ class Simulation {
     this.currentHeatShape = new createjs.Shape();
     this.currentHeatShape.graphics.setStrokeStyle(0.5);
     this.currentStage.addChild(this.currentHeatShape);
-    this.outlineContainer = this.createOutlineContainer();
-    this.thermometers = this.createThermometerContainer();
+    this.outlineContainer = this.showCupOutline();
     this.currentStage.addChild(this.outlineContainer);
-    this.currentStage.addChild(this.thermometers);
 
     $("#showWorldsSlider_" + this.trialId).attr("max", 899);
     $("#showWorldsSlider_" + this.trialId).on("input", function() {
@@ -196,11 +194,10 @@ class Simulation {
     worldObjects.cups[0].liquid_temperature =
       convertTempTextToTempNum(this.beverageTempText);
     worldObjects.air.temperature = convertTempTextToTempNum(this.airTempText);
-    world.ticks = 0;
-    resetThermometers();
     initWorld();
+    world.ticks = 0;
+    this.intializeThermometers();
   }
-
 
   runEntireTrial() {
     while (true) {
@@ -271,7 +268,7 @@ class Simulation {
     this.showTrialAtTick(0);
   }
 
-  createOutlineContainer() {
+  showCupOutline() {
     let container = new createjs.Container();
     for (const cup of worldObjects.cups) {
       let topLeft = voxelToPixels(cup.x, cup.y+cup.height-1);
@@ -285,20 +282,29 @@ class Simulation {
       outline.graphics.setStrokeStyle(1).beginStroke(color)
         .drawRect(iTopLeft.x0, iTopLeft.y0, (cup.width-2*cup.thickness)*worldSpecs.voxel_width, (cup.height-2*cup.thickness)*worldSpecs.voxel_height).endStroke();
       outline.cache(topLeft.x0 - 1, topLeft.y0 - 1, cup.width * worldSpecs.voxel_width + 2, cup.height * worldSpecs.voxel_height + 2);
-
       container.addChild(outline);
-      let text = new createjs.Text("Cup", "12px Arial", "black");
-      text.x = topLeft.x0 + cup.width*worldSpecs.voxel_width/2-10;
-      text.y = topLeft.y0 + 5;
-      container.addChild(text);
+
+      let cupText = new createjs.Text("Cup", "12px Arial", "black");
+      cupText.x = topLeft.x0 + cup.width*worldSpecs.voxel_width/2-10;
+      cupText.y = topLeft.y0 + 5;
+      container.addChild(cupText);
 
       topLeft = voxelToPixels(cup.x+cup.thickness, cup.y+cup.height-1-cup.thickness);
-      text = new createjs.Text("Liquid", "12px Arial", "black");
-      text.x = topLeft.x0 + (cup.width-2*cup.thickness)*worldSpecs.voxel_width/2-12;
-      text.y = topLeft.y0 + (cup.height-cup.thickness)*worldSpecs.voxel_height/2-2;
-      container.addChild(text);
+      let liquidText = new createjs.Text("Liquid", "12px Arial", "black");
+      liquidText.x = topLeft.x0 + (cup.width-2*cup.thickness)*worldSpecs.voxel_width/2-12;
+      liquidText.y = topLeft.y0 + (cup.height-cup.thickness)*worldSpecs.voxel_height/2-2;
+      container.addChild(liquidText);
     }
     return container;
+  }
+
+  intializeThermometers() {
+    for (const thermometer of worldObjects.thermometers) {
+      const box = voxelToPixels(thermometer.x, thermometer.y);
+      thermometer.text = new createjs.Text("99", "16px Arial", "black");
+      thermometer.text.x = box.x0 + box.width + 9;
+      thermometer.text.y = box.y0;
+    }
   }
 
   createThermometerContainer() {

@@ -92,7 +92,6 @@ let tempToHSLValues = {};
 function init() {
   initializeValues();
   stage = new createjs.Stage($("#canvas")[0]);
-  initWorld();
 }
 
 function initTemperatureColorLegend(trialId) {
@@ -139,19 +138,12 @@ function initializeValues() {
 }
 
 function initWorld() {
-  if (world == null) {
-    world = new createjs.Container();
-    world.shape = new createjs.Shape();
-    world.addChild(world.shape);
-    world.heatShape = new createjs.Shape();
-    world.addChild(world.heatShape);
-    initializeOutlines(world);
-    initializeThermometers(world);
-    stage.addChild(world);
-  } else {
-    world.shape.graphics.clear();
-    world.heatShape.graphics.clear();
-  }
+  world = new createjs.Container();
+  world.shape = new createjs.Shape();
+  world.addChild(world.shape);
+  world.heatShape = new createjs.Shape();
+  world.addChild(world.heatShape);
+  stage.addChild(world);
 
   world.voxels = [];
   // first assume everything is air
@@ -211,77 +203,10 @@ function initWorld() {
     }
   }
   world.shape.cache(0, 0, worldSpecs.width_px, worldSpecs.height_px);
-
-  drawLiquidAndCupBorders();
-
-  // update temperature on thermometers
-  for (const thermometer of worldObjects.thermometers) {
-    const voxel = getVoxel(thermometer.x, thermometer.y);
-    thermometer.text.text =
-        voxel.temperature == null ? "" : voxel.temperature + " °C";
-  }
-}
-
-function initializeOutlines(world) {
-  for (const cup of worldObjects.cups) {
-    let topLeft = voxelToPixels(cup.x, cup.y+cup.height-1);
-    const outline = cup.outline = new createjs.Shape();
-    world.addChild(outline);
-    let text = new createjs.Text("Cup", "12px Arial", "black");
-    text.x = topLeft.x0 + cup.width*worldSpecs.voxel_width/2-10;
-    text.y = topLeft.y0 + 5;
-    world.addChild(text);
-
-    topLeft = voxelToPixels(cup.x+cup.thickness, cup.y+cup.height-1-cup.thickness);
-    text = new createjs.Text("Liquid", "12px Arial", "black");
-    text.x = topLeft.x0 + (cup.width-2*cup.thickness)*worldSpecs.voxel_width/2-12;
-    text.y = topLeft.y0 + (cup.height-cup.thickness)*worldSpecs.voxel_height/2-2;
-    world.addChild(text);
-  }
-}
-
-function drawLiquidAndCupBorders() {
-  // draw outlines to match cup color
-  for (let i = 0; i < worldObjects.cups.length; i++) {
-    const cup = worldObjects.cups[i];
-    const topLeft = voxelToPixels(cup.x, cup.y + cup.height-1);
-    const outline = cup.outline;
-    const color = getCupMaterialColor(cup);
-    outline.graphics.clear().setStrokeStyle(1).beginStroke(color)
-        .drawRect(topLeft.x0, topLeft.y0, cup.width*worldSpecs.voxel_width, cup.height*worldSpecs.voxel_height).endStroke();
-
-    const iTopLeft = voxelToPixels(cup.x + cup.thickness, cup.y + cup.height - 1 - cup.thickness);
-    outline.graphics.setStrokeStyle(1).beginStroke(color)
-        .drawRect(iTopLeft.x0, iTopLeft.y0, (cup.width-2*cup.thickness)*worldSpecs.voxel_width, (cup.height-2*cup.thickness)*worldSpecs.voxel_height).endStroke();
-    outline.cache(topLeft.x0 - 1, topLeft.y0 - 1, cup.width * worldSpecs.voxel_width + 2, cup.height * worldSpecs.voxel_height + 2);
-  }
 }
 
 function getCupMaterialColor(cup) {
   return cup.material != null && cup.material.length > 0 ? (worldObjects.materials[cup.material].stroke_color != null ? worldObjects.materials[cup.material].stroke_color: worldObjects.materials[cup.material].color) : "#444444";
-}
-
-function initializeThermometers(world) {
-  for (const thermometer of worldObjects.thermometers) {
-    const shape = new createjs.Shape();
-    const box = voxelToPixels(thermometer.x, thermometer.y);
-    shape.graphics.setStrokeStyle(2).beginStroke(thermometer.color)
-        .beginFill("white")
-        .drawRoundRect(-box.width/4, -box.height/4, box.width/2, 50, 4)
-        .endFill().endStroke();
-    shape.graphics.setStrokeStyle(2).beginStroke(thermometer.color)
-        .beginFill("white").drawCircle(0, 0, box.width/2).endFill().endStroke();
-    shape.x = box.x0 + box.width/2;
-    shape.y = box.y0 + box.height/2;
-    shape.cache(-box.width/2 - 2, -box.height/2 - 2, box.width + 4, 56);
-    shape.rotation = -135;
-    world.addChild(shape);
-    // setup textbox for temperature recording
-    thermometer.text = new createjs.Text("99", "16px Arial", "black");
-    thermometer.text.x = box.x0 + box.width + 9;
-    thermometer.text.y = box.y0;
-    world.addChild(thermometer.text);
-  }
 }
 
 /**
