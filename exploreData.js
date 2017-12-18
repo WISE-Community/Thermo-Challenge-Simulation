@@ -458,18 +458,21 @@ class Simulation {
     }
     this.currentStage.update();
     this.ticksPlayed.push(tick);
-    if (this.isCompleted) {
-      this.WISE_onTick(870);
-    } else {
-      this.WISE_onTick(tick);
-    }
+    // if (this.isCompleted) {
+    //   this.WISE_onTick(870, tick);
+    // } else {
+    //   this.WISE_onTick(tick);
+    // }
+    this.WISE_onTick(tick);
   }
 
   WISE_onTick(tick) {
     if (tick % 30 === 0) {
-      let studentData = getWorldState(tick);
+      let studentData = null;
       if (this.isCompleted) {
-        studentData = getWorldState(870);
+        studentData = getWorldState(870, tick);
+      } else {
+        studentData = getWorldState(tick);
       }
       const componentState = {
         messageType: 'studentDataChanged',
@@ -808,8 +811,7 @@ function receiveMessage(message) {
         let componentState = messageData.componentState;
         if (componentState.componentType == 'Graph') {
           showModelStateFromGraphStudentWork(componentState);
-        } else if (componentState.componentType == 'Embedded' &&
-          componentState.studentData.gridsSelected) {
+        } else if (componentState.componentType == 'Embedded') {
             showModelStateFromEmbeddedGrid(componentState)
         }
       }
@@ -827,7 +829,7 @@ function showModelStateFromEmbeddedGrid0(componentState) {
   }
 }
 
-function showModelStateFromEmbeddedGrid(componentState) {
+function showModelStateFromEmbeddedGrid1(componentState) {
   let state = componentState.studentData.state;
   if (state.selectedTrialIds.length > 0) {
     let selectedTrialId = state.selectedTrialIds[state.selectedTrialIds.length - 1];
@@ -841,6 +843,39 @@ function showModelStateFromEmbeddedGrid(componentState) {
       showTrial(material, bevTemp, airTemp, isCompleted);
     }
   }
+}
+
+function showModelStateFromEmbeddedGrid(componentState) {
+  let selectedCells = componentState.studentData.selectedCells;
+  let completedCells = componentState.studentData.completedCells;
+  if (selectedCells.length > 0) {
+    let selectedCell = selectedCells[selectedCells.length - 1];
+    let material = selectedCell.material;
+    let bevTemp = selectedCell.bevTemp;
+    let airTemp = selectedCell.airTemp;
+    if (currentSimulation == null ||
+        !currentSimulation.isCurrentSimulation(material, bevTemp, airTemp)) {
+      let isCompleted = isCellCompleted(completedCells, material, bevTemp, airTemp);
+      showTrial(material, bevTemp, airTemp, isCompleted);
+    }
+  }
+}
+
+function getSelectedCell() {
+
+}
+
+function isCellCompleted(completedCells, material, bevTemp, airTemp) {
+  for (let completedCell of completedCells) {
+    if (cellAttributesMatch(completedCell, material, bevTemp, airTemp)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function cellAttributesMatch(cell, material, bevTemp, airTemp) {
+  return cell.material == material && cell.bevTemp == bevTemp && cell.airTemp == airTemp;
 }
 
 function getParametersFromTrialId(trialId) {
@@ -941,7 +976,7 @@ function getCurrentCupMaterialColor() {
   return worldObjects.materials[worldObjects.cups[0].material].stroke_color;
 }
 
-function getWorldState(tick) {
+function getWorldState(tick, tickToHighlight) {
 
   const studentData = {
     ticks: world.ticks,
@@ -952,7 +987,8 @@ function getWorldState(tick) {
     material0_initial_temperature: worldObjects.cups[0].material_temperature,
     liquid_initial_temperature: worldObjects.cups[0].liquid_initial_temperature,
     air_initial_temperature:worldObjects.air.temperature,
-    xPlotLine: tick * 2 / 30,
+    //xPlotLine: tick * 2 / 30,
+    //showTooltipOnX: tick * 2 / 30,
     trial: {
       id: currentSimulation.trialId,
       name:  currentSimulation.trialId,
@@ -965,6 +1001,11 @@ function getWorldState(tick) {
     }
   };
 
+  if (tickToHighlight != null) {
+    studentData.showTooltipOnX = tickToHighlight * 2 / 30;
+  } else {
+    studentData.showTooltipOnX = tick * 2 / 30;
+  }
 
   return studentData;
 }
