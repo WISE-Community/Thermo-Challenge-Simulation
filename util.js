@@ -50,3 +50,15 @@ function isInterpretMode() {
   const mode = getURLParameters("mode");
   return mode == 'interpret';
 }
+
+function getStartingMaterial() {
+  return getURLParameters("material");
+}
+
+function getStartingBevTemp() {
+  return getURLParameters("bevTemp");
+}
+
+function getStartingAirTemp() {
+  return getURLParameters("airTemp");
+}
