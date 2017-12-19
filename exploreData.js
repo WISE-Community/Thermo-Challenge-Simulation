@@ -233,13 +233,23 @@ function getTrialAirTemperature(trialId) {
   return airTempStr.substring(0, airTempStr.length - 3);
 }
 
-function convertTempTextToTempNum(temperatureText) {
+function convertLiquidTempTextToTempNum(temperatureText) {
   if (temperatureText == "Hot") {
     return 90;
   } else if (temperatureText == "Warm") {
-    return 40;
+    return 50;
   } else {
-    return 5;
+    return 4;
+  }
+}
+
+function convertAirTempTextToTempNum(temperatureText) {
+  if (temperatureText == "Hot") {
+    return 40;
+  } else if (temperatureText == "Warm") {
+    return 30;
+  } else {
+    return 0;
   }
 }
 

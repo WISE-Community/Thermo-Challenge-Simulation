@@ -364,8 +364,8 @@ class Simulation {
   setupTrial() {
     worldObjects.cups[0].material = this.material;
     worldObjects.cups[0].liquid_temperature =
-      convertTempTextToTempNum(this.beverageTempText);
-    worldObjects.air.temperature = convertTempTextToTempNum(this.airTempText);
+      convertLiquidTempTextToTempNum(this.beverageTempText);
+    worldObjects.air.temperature = convertAirTempTextToTempNum(this.airTempText);
     initWorld();
     world.ticks = 0;
     this.intializeThermometers();
