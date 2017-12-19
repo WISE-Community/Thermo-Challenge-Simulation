@@ -53,33 +53,27 @@ const worldObjects = {
   materials: {
     "Aluminum": {
       conductivity: 200,
-      color: "#AAAAAA",
-      stroke_color: "#888888"
+      color: "#000000"
     },
     "Wood": {
       conductivity: 10,
-      color: "#996622",
-      stroke_color: "#774400"
+      color: "#774400"
     },
     "Styrofoam": {
       conductivity: 1,
-      color: "#FFFFFF",
-      stroke_color: "#DDDDDD"
+      color: "#777777"
     },
     "Clay": {
       conductivity: 20,
-      color: "#FF8844",
-      stroke_color: "#DD6622"
+      color: "#00B0AF"
     },
     "Glass": {
       conductivity: 40,
-      color: "rgba(150,200,180,0.5)",
-      stroke_color: "rgba(100,150,130,0.8)"
+      color: "#1565C0"
     },
     "Plastic": {
       conductivity: 20,
-      color: "#FF33AA",
-      stroke_color: "#DD1188"
+      color: "#DD1188"
     }
   }
 };
@@ -180,7 +174,7 @@ function initWorld() {
 }
 
 function getCupMaterialColor(cup) {
-  return cup.material != null && cup.material.length > 0 ? (worldObjects.materials[cup.material].stroke_color != null ? worldObjects.materials[cup.material].stroke_color: worldObjects.materials[cup.material].color) : "#444444";
+  return cup.material != null && cup.material.length > 0 ? (worldObjects.materials[cup.material].color != null ? worldObjects.materials[cup.material].color: worldObjects.materials[cup.material].color) : "#444444";
 }
 
 /**
@@ -510,7 +504,7 @@ function getMaxX(componentState) {
 }
 
 function getCurrentCupMaterialColor() {
-  return worldObjects.materials[worldObjects.cups[0].material].stroke_color;
+  return worldObjects.materials[worldObjects.cups[0].material].color;
 }
 
 function getWorldState(tick, tickToHighlight) {
