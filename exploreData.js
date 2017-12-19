@@ -286,10 +286,7 @@ function getVoxel(vx, vy) {
 
 /**
  * Returns HSL given integer temperature.
- * 0 degrees = white
- * 100 degrees = red
- * We use an exponential function so there can be a wider range for lower
- * temperatures (0->40) and ~50 will be pinkish.
+ * Using a rainbow-like, weather map type color spcetrum
  */
 function tempToHSL(temperature) {
   let temp2Decimals = temperature.toFixed(2);
@@ -299,9 +296,9 @@ function tempToHSL(temperature) {
     const temp_frac = (temperature - worldSpecs.temperature_min)
       / worldSpecs.temperature_range;
     const hslValue = {
-      h: 0,
+      h: 260 - (temp_frac * 280),
       s: "100%",
-      l: 100 - (65 * (temp_frac * temp_frac)) + "%"
+      l: "50%"
     };
     tempToHSLValues[temp2Decimals] = hslValue;
     return hslValue;
