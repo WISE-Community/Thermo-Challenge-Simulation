@@ -7,7 +7,7 @@ const worldSpecs = {
   max_y: 15,
   temperature_min: 0,
   temperature_max: 100,
-  flow_speed: 4,
+  flow_speed: 4.6,
   max_ticks: 30 * 30,
   series: [],
   trialId: null
@@ -23,16 +23,16 @@ const worldSpecs = {
  */
 const worldObjects = {
   thermometers:[
-    { x:0, y:-1, color:"#00FF00", saveSeries:true, id:"beverage" },
+    { x:0, y:-3, color:"#00FF00", saveSeries:true, id:"beverage" },
     { x:0, y:7, color:"#FF00DD", id:"air" }
   ],
   cups: [
     {
-      x: -6,
-      y: -8,
-      width: 13,
-      height: 13,
-      thickness: 3,
+      x: -8,
+      y: -10,
+      width: 16,
+      height: 16,
+      thickness: 4,
       liquid: "Water",
       material: "",
       liquid_temperature: null,
@@ -52,7 +52,7 @@ const worldObjects = {
   },
   materials: {
     "Aluminum": {
-      conductivity: 200,
+      conductivity: 100,
       color: "#000000"
     },
     "Wood": {

@@ -10,7 +10,7 @@ h2 {
 }
 
 #trial {
-  width: 420px;
+  width: 410px;
   text-align: center;
   margin: 0 auto;
 }
@@ -37,15 +37,15 @@ h2 {
 
 .model__label--air {
   top: 56px;
-  left: 95px;
+  left: 90px;
 }
 
 .model__label--cup {
-  top: 115px;
-  left: 92px;
+  top: 108px;
+  left: 30px;
 }
 
 .model__label--liquid {
-  top: 184px;
-  left: 90px;
+  top: 194px;
+  left: 89px;
 }

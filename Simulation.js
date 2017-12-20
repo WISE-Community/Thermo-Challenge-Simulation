@@ -155,7 +155,7 @@ class Simulation {
         <span class="model__label model__label--air">Air</span>
         <span class="model__label model__label--cup" style="color: ${color};">Cup</span>
         <span class="model__label model__label--liquid">Liquid</span>
-        <canvas id="canvas_${this.trialId}" width="210" height="310" style="background-color:#eeeeef"></canvas>
+        <canvas id="canvas_${this.trialId}" width="200" height="310" style="background-color:#eeeeef"></canvas>
         <canvas id="thermometerLegend" width="200" height="310" style="background-color:#eeeeef"></canvas>
       </div>`
     );
@@ -439,7 +439,7 @@ class Simulation {
     for (const thermometer of worldObjects.thermometers) {
       const voxel = getVoxel(thermometer.x, thermometer.y);
       thermometer.temperature = voxel.temperature;
-      thermometer.text.text = voxel.temperature.toFixed(1) + " °C";
+      thermometer.text.text = voxel.temperature.toFixed(1) + "°C";
       if (thermometer.saveSeries != null && thermometer.saveSeries &&
         (world.ticks % 30 == 0)) {
         currentSimulation.data.push({x:world.ticks / worldSpecs.max_ticks * 60, y:voxel.temperature});
