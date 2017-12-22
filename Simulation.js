@@ -109,6 +109,9 @@ class Simulation {
     this.showThermometerReadings(worldData);
     this.currentStage.update();
     this.ticksPlayed.push(tick);
+    if (tick >= 870) {
+      this.isCompleted = true;
+    }
     this.WISE_onTick(tick);
   }
 
@@ -141,24 +144,16 @@ class Simulation {
   }
 
   showTrialRenderingBox() {
-    const cup = worldObjects.cups[0];
-    const color = getCupMaterialColor(cup);
     $("#trial").empty();
-    $("#trial").append(
-      `<h2 style="color: ${color};">${this.material} Cup / ${this.beverageTempText} Beverage</h2>
-      <div class="timeline">
-        <input id="showWorldsSlider_${this.trialId}" style="width:400px" type="range" min="0" max="300" step="1" value="0"/>
-        <span style="margin-left:10px" id="timePlaying_${this.trialId}"></span>
-      </div>
-      <div class="model">
-        <input id="playPauseWorld_${this.trialId}" class="play" type="button" value="Play"/>
-        <span class="model__label model__label--air">Air</span>
-        <span class="model__label model__label--cup" style="color: ${color};">Cup</span>
-        <span class="model__label model__label--liquid">Liquid</span>
-        <canvas id="canvas_${this.trialId}" width="200" height="310" style="background-color:#eeeeef"></canvas>
+    $("#trial").append(`<input id="playPauseWorld_${this.trialId}" type="button" value="Play"/>`);
+    $("#trial").append(`<input id="showWorldsSlider_${this.trialId}" style="width:400px" type="range" min="0" max="300" step="1" value="0"/>`);
+    $("#trial").append(`<span style="margin-left:10px" id="timePlaying_${this.trialId}"></span>`);
+    $("#trial").append('<br/>');
+    $("#trial").append(`<h2>${this.trialId}</h2>`);
+    $("#trial").append(`<div>
+        <canvas id="canvas_${this.trialId}" width="210" height="310" style="background-color:#eeeeef"></canvas>
         <canvas id="thermometerLegend" width="200" height="310" style="background-color:#eeeeef"></canvas>
-      </div>`
-    );
+        </div>`);
 
     this.showThermometerLegend();
     this.currentStage = new createjs.Stage($(`#canvas_${this.trialId}`)[0]);
@@ -205,10 +200,9 @@ class Simulation {
   }
 
   addLiquidTemperatureLabel() {
-    const text = new createjs.Text("Liquid Temp", "13px Arial", "#000000");
-    text.x = 60;
-    text.y = 10;
-    text.textAlign = 'center';
+    const text = new createjs.Text("Liquid\nTemperature", "15px Arial", "#008833");
+    text.x = 5;
+    text.y = 5;
     this.thermometerLegendStage.addChild(text);
   }
 
@@ -234,11 +228,10 @@ class Simulation {
   }
 
   addLiquidTemperatureGaugeLabel() {
-    const gaugeLabel = new createjs.Text("liquid temp", "14px Arial", "#000000");
+    const gaugeLabel = new createjs.Text("liquid temp", "15px Arial", "#008833");
     gaugeLabel.name = "liquidTempGaugeLabel";
-    gaugeLabel.x = 35;
+    gaugeLabel.x = 5;
     gaugeLabel.y = 70;
-    gaugeLabel.textAlign = "right";
     this.thermometerLegendStage.addChild(gaugeLabel);
   }
 
@@ -248,7 +241,7 @@ class Simulation {
     gaugeLabel.text = temperature.toFixed(1);
     const heatMap =
       this.thermometerLegendStage.getChildByName("liquidTempHeatMap");
-    const tempLabelYOffset = 32 + heatMap.height_px - (temperature / 100) * heatMap.height_px;
+    const tempLabelYOffset = 52 + heatMap.height_px - (temperature / 100) * heatMap.height_px;
     gaugeLabel.y = tempLabelYOffset;
   }
 
@@ -257,7 +250,7 @@ class Simulation {
       this.thermometerLegendStage.getChildByName("liquidTempGaugeLine");
     const heatMap =
       this.thermometerLegendStage.getChildByName("liquidTempHeatMap");
-    const tempLineYOffset = 32 + heatMap.height_px - (temperature / 100) * heatMap.height_px;
+    const tempLineYOffset = 52 + heatMap.height_px - (temperature / 100) * heatMap.height_px;
     gaugeLine.y = tempLineYOffset;
   }
 
@@ -275,7 +268,7 @@ class Simulation {
   }
 
   addAirTemperatureGaugeLabel() {
-    const gaugeLabel = new createjs.Text("liquid temp", "14px Arial", "#000000");
+    const gaugeLabel = new createjs.Text("liquid temp", "15px Arial", "#008833");
     gaugeLabel.name = "airTempGaugeLabel";
     gaugeLabel.x = 165;
     gaugeLabel.y = 70;
@@ -288,7 +281,7 @@ class Simulation {
     gaugeLabel.text = temperature.toFixed(1);
     const heatMap =
       this.thermometerLegendStage.getChildByName("airTempHeatMap");
-    const tempLabelYOffset = 32 + heatMap.height_px - (temperature / 100) * heatMap.height_px;
+    const tempLabelYOffset = 52 + heatMap.height_px - (temperature / 100) * heatMap.height_px;
     gaugeLabel.y = tempLabelYOffset;
   }
 
@@ -297,33 +290,31 @@ class Simulation {
       this.thermometerLegendStage.getChildByName("airTempGaugeLine");
     const heatMap =
       this.thermometerLegendStage.getChildByName("airTempHeatMap");
-    const tempLineYOffset = 32 + heatMap.height_px - (temperature / 100) * heatMap.height_px;
+    const tempLineYOffset = 52 + heatMap.height_px - (temperature / 100) * heatMap.height_px;
     gaugeLine.y = tempLineYOffset;
   }
 
   addAirTemperatureLabel() {
-    const text = new createjs.Text("Air Temp", "13px Arial", "#000000");
-    text.x = 138;
-    text.y = 10;
-    text.textAlign = 'center';
+    const text = new createjs.Text("Air\nTemperature", "15px Arial", "#008833");
+    text.x = 105;
+    text.y = 5;
     this.thermometerLegendStage.addChild(text);
   }
 
   addTemperatureLegendLabels() {
     const container = new createjs.Container();
-    container.height_px = 240;
+    container.height_px = 200;
     container.width_px = 30;
     for (let t = worldSpecs.temperature_max; t >= worldSpecs.temperature_min; t--) {
       const height_px = container.height_px / (worldSpecs.temperature_range+1);
       if (t % 20 == 0) {
-        const text = new createjs.Text(t + "°C", "13px Arial", "#777777");
+        const text = new createjs.Text(t + " °C", "13px Arial", "#008833");
         text.x = container.width_px;
-        text.y = 42 + (worldSpecs.temperature_max - t) * height_px - 6;
-        text.textAlign = "center";
+        text.y = 60 + (worldSpecs.temperature_max - t) * height_px - 6;
         container.addChild(text);
       }
     }
-    container.x = 70;
+    container.x = 55;
     this.thermometerLegendStage.addChild(container);
   }
 
@@ -337,16 +328,16 @@ class Simulation {
 
   createHeatMap() {
     const colorMapShape = new createjs.Shape();
-    colorMapShape.height_px = 240;
+    colorMapShape.height_px = 200;
     colorMapShape.width_px = 20;
-    for (let t = worldSpecs.temperature_max; t >= worldSpecs.temperature_min; t = t - 0.4) {
+    for (let t = worldSpecs.temperature_max; t >= worldSpecs.temperature_min; t--) {
       const hsl = tempToHSL(t);
       const col = "hsl(" + hsl.h + "," + hsl.s + "," + hsl.l + ")";
       const height_px = colorMapShape.height_px / (worldSpecs.temperature_range+1);
       colorMapShape.graphics.beginFill(col)
-        .drawRect(20, 40 + (worldSpecs.temperature_max - t) * height_px, colorMapShape.width_px, height_px).endFill();
+        .drawRect(20, 60 + (worldSpecs.temperature_max - t) * height_px, colorMapShape.width_px, height_px).endFill();
     }
-    colorMapShape.cache(20, 40, colorMapShape.width_px, colorMapShape.height_px);
+    colorMapShape.cache(20, 60, colorMapShape.width_px, colorMapShape.height_px);
     return colorMapShape;
   }
 
@@ -376,8 +367,8 @@ class Simulation {
   setupTrial() {
     worldObjects.cups[0].material = this.material;
     worldObjects.cups[0].liquid_temperature =
-      convertLiquidTempTextToTempNum(this.beverageTempText);
-    worldObjects.air.temperature = convertAirTempTextToTempNum(this.airTempText);
+      convertTempTextToTempNum(this.beverageTempText);
+    worldObjects.air.temperature = convertTempTextToTempNum(this.airTempText);
     initWorld();
     world.ticks = 0;
     this.intializeThermometers();
@@ -439,7 +430,7 @@ class Simulation {
     for (const thermometer of worldObjects.thermometers) {
       const voxel = getVoxel(thermometer.x, thermometer.y);
       thermometer.temperature = voxel.temperature;
-      thermometer.text.text = voxel.temperature.toFixed(1) + "°C";
+      thermometer.text.text = voxel.temperature.toFixed(1) + " °C";
       if (thermometer.saveSeries != null && thermometer.saveSeries &&
         (world.ticks % 30 == 0)) {
         currentSimulation.data.push({x:world.ticks / worldSpecs.max_ticks * 60, y:voxel.temperature});
@@ -459,13 +450,30 @@ class Simulation {
 
       // draw outlines to match cup color
       const outline = cup.outline = new createjs.Shape();
-      outline.graphics.setStrokeStyle(1).beginStroke('#000000')
+      const color = getCupMaterialColor(cup);
+      outline.graphics.setStrokeStyle(1).beginStroke(color)
         .drawRect(topLeft.x0, topLeft.y0, cup.width*worldSpecs.voxel_width, cup.height*worldSpecs.voxel_height).endStroke();
       const iTopLeft = voxelToPixels(cup.x + cup.thickness, cup.y + cup.height - 1 - cup.thickness);
-      outline.graphics.setStrokeStyle(1).beginStroke('#000000')
+      outline.graphics.setStrokeStyle(1).beginStroke(color)
         .drawRect(iTopLeft.x0, iTopLeft.y0, (cup.width-2*cup.thickness)*worldSpecs.voxel_width, (cup.height-2*cup.thickness)*worldSpecs.voxel_height).endStroke();
       outline.cache(topLeft.x0 - 1, topLeft.y0 - 1, cup.width * worldSpecs.voxel_width + 2, cup.height * worldSpecs.voxel_height + 2);
       container.addChild(outline);
+
+      let airText = new createjs.Text("Air", "14px Arial", "black");
+      airText.x = topLeft.x0 + cup.width*worldSpecs.voxel_width/2-10;
+      airText.y = topLeft.y0 - 50;
+      container.addChild(airText);
+
+      let cupText = new createjs.Text("Cup", "14px Arial", "black");
+      cupText.x = topLeft.x0 + cup.width*worldSpecs.voxel_width/2-10;
+      cupText.y = topLeft.y0 + 5;
+      container.addChild(cupText);
+
+      topLeft = voxelToPixels(cup.x+cup.thickness, cup.y+cup.height-1-cup.thickness);
+      let liquidText = new createjs.Text("Liquid", "14px Arial", "black");
+      liquidText.x = topLeft.x0 + (cup.width-2*cup.thickness)*worldSpecs.voxel_width/2-12;
+      liquidText.y = topLeft.y0 + (cup.height-cup.thickness)*worldSpecs.voxel_height/2-2;
+      container.addChild(liquidText);
     }
     return container;
   }
