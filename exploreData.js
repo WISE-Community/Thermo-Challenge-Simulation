@@ -7,7 +7,7 @@ const worldSpecs = {
   max_y: 15,
   temperature_min: 0,
   temperature_max: 100,
-  flow_speed: 4.6,
+  flow_speed: 4,
   max_ticks: 30 * 30,
   series: [],
   trialId: null
@@ -23,16 +23,16 @@ const worldSpecs = {
  */
 const worldObjects = {
   thermometers:[
-    { x:0, y:-3, color:"#00FF00", saveSeries:true, id:"beverage" },
+    { x:0, y:-1, color:"#00FF00", saveSeries:true, id:"beverage" },
     { x:0, y:7, color:"#FF00DD", id:"air" }
   ],
   cups: [
     {
-      x: -8,
-      y: -10,
-      width: 16,
-      height: 16,
-      thickness: 4,
+      x: -6,
+      y: -8,
+      width: 13,
+      height: 13,
+      thickness: 3,
       liquid: "Water",
       material: "",
       liquid_temperature: null,
@@ -52,28 +52,34 @@ const worldObjects = {
   },
   materials: {
     "Aluminum": {
-      conductivity: 100,
-      color: "#000000"
+      conductivity: 200,
+      color: "#AAAAAA",
+      stroke_color: "#888888"
     },
     "Wood": {
       conductivity: 10,
-      color: "#774400"
+      color: "#996622",
+      stroke_color: "#774400"
     },
     "Styrofoam": {
       conductivity: 1,
-      color: "#777777"
+      color: "#FFFFFF",
+      stroke_color: "#DDDDDD"
     },
     "Clay": {
       conductivity: 20,
-      color: "#00B0AF"
+      color: "#FF8844",
+      stroke_color: "#DD6622"
     },
     "Glass": {
       conductivity: 40,
-      color: "#1565C0"
+      color: "rgba(150,200,180,0.5)",
+      stroke_color: "rgba(100,150,130,0.8)"
     },
     "Plastic": {
       conductivity: 20,
-      color: "#DD1188"
+      color: "#FF33AA",
+      stroke_color: "#DD1188"
     }
   }
 };
@@ -174,7 +180,7 @@ function initWorld() {
 }
 
 function getCupMaterialColor(cup) {
-  return cup.material != null && cup.material.length > 0 ? (worldObjects.materials[cup.material].color != null ? worldObjects.materials[cup.material].color: worldObjects.materials[cup.material].color) : "#444444";
+  return cup.material != null && cup.material.length > 0 ? (worldObjects.materials[cup.material].stroke_color != null ? worldObjects.materials[cup.material].stroke_color: worldObjects.materials[cup.material].color) : "#444444";
 }
 
 /**
@@ -233,23 +239,13 @@ function getTrialAirTemperature(trialId) {
   return airTempStr.substring(0, airTempStr.length - 3);
 }
 
-function convertLiquidTempTextToTempNum(temperatureText) {
+function convertTempTextToTempNum(temperatureText) {
   if (temperatureText == "Hot") {
     return 90;
   } else if (temperatureText == "Warm") {
-    return 50;
-  } else {
-    return 4;
-  }
-}
-
-function convertAirTempTextToTempNum(temperatureText) {
-  if (temperatureText == "Hot") {
     return 40;
-  } else if (temperatureText == "Warm") {
-    return 30;
   } else {
-    return 0;
+    return 5;
   }
 }
 
@@ -290,7 +286,10 @@ function getVoxel(vx, vy) {
 
 /**
  * Returns HSL given integer temperature.
- * Using a rainbow-like, weather map type color spcetrum
+ * 0 degrees = white
+ * 100 degrees = red
+ * We use an exponential function so there can be a wider range for lower
+ * temperatures (0->40) and ~50 will be pinkish.
  */
 function tempToHSL(temperature) {
   let temp2Decimals = temperature.toFixed(2);
@@ -300,9 +299,9 @@ function tempToHSL(temperature) {
     const temp_frac = (temperature - worldSpecs.temperature_min)
       / worldSpecs.temperature_range;
     const hslValue = {
-      h: 260 - (temp_frac * 280),
+      h: 0,
       s: "100%",
-      l: "50%"
+      l: 100 - (65 * (temp_frac * temp_frac)) + "%"
     };
     tempToHSLValues[temp2Decimals] = hslValue;
     return hslValue;
@@ -360,35 +359,18 @@ function receiveMessage(message) {
   }
 }
 
-function showModelStateFromEmbeddedGrid0(componentState) {
-  const lastTrial = componentState.studentData
-      .gridsSelected[componentState.studentData.gridsSelected.length - 1];
-
-  if (currentSimulation == null || !currentSimulation.isCurrentSimulation(
-      lastTrial.material, lastTrial.bevTemp, lastTrial.airTemp)) {
-    showTrial(lastTrial.material, lastTrial.bevTemp, lastTrial.airTemp);
-  }
-}
-
-function showModelStateFromEmbeddedGrid1(componentState) {
-  let state = componentState.studentData.state;
-  if (state.selectedTrialIds.length > 0) {
-    let selectedTrialId = state.selectedTrialIds[state.selectedTrialIds.length - 1];
-    let parameters = getParametersFromTrialId(selectedTrialId);
-    let material = parameters.material;
-    let bevTemp = parameters.bevTemp;
-    let airTemp = parameters.airTemp;
-    if (currentSimulation == null ||
-        !currentSimulation.isCurrentSimulation(material, bevTemp, airTemp)) {
-      let isCompleted = state[bevTemp][material].isCompleted;
-      showTrial(material, bevTemp, airTemp, isCompleted);
-    }
-  }
-}
-
 function showModelStateFromEmbeddedGrid(componentState) {
   let selectedCells = componentState.studentData.selectedCells;
   let completedCells = componentState.studentData.completedCells;
+  if (currentSimulation != null) {
+    if (!currentSimulation.isCompleted) {
+      let trialIdsToDelete = [];
+      trialIdsToDelete.push(
+        getTrialId(currentSimulation.material,
+          currentSimulation.beverageTempText, currentSimulation.airTempText));
+      sendTrialIdsToDelete(trialIdsToDelete);
+    }
+  }
   if (selectedCells.length > 0) {
     let selectedCell = selectedCells[selectedCells.length - 1];
     let material = selectedCell.material;
@@ -399,6 +381,25 @@ function showModelStateFromEmbeddedGrid(componentState) {
       let isCompleted = isCellCompleted(completedCells, material, bevTemp, airTemp);
       showTrial(material, bevTemp, airTemp, isCompleted);
     }
+  }
+}
+
+function sendTrialIdsToDelete(trialIdsToDelete) {
+  let studentData = {};
+  studentData.trialIdsToDelete = trialIdsToDelete;
+
+  const componentState = {
+    messageType: 'studentDataChanged',
+    isAutoSave: false,
+    isSubmit: false,
+    studentData: studentData
+  };
+
+  componentState.timestamp = new Date().getTime();
+  try {
+    window.postMessage(componentState, "*");
+  } catch(err) {
+    console.log("not posted");
   }
 }
 
@@ -514,7 +515,7 @@ function getMaxX(componentState) {
 }
 
 function getCurrentCupMaterialColor() {
-  return worldObjects.materials[worldObjects.cups[0].material].color;
+  return worldObjects.materials[worldObjects.cups[0].material].stroke_color;
 }
 
 function getWorldState(tick, tickToHighlight) {
