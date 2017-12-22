@@ -378,6 +378,9 @@ function showModelStateFromEmbeddedGrid(componentState) {
     let airTemp = selectedCell.airTemp;
     if (currentSimulation == null ||
         !currentSimulation.isCurrentSimulation(material, bevTemp, airTemp)) {
+      if (currentSimulation != null && currentSimulation.isSimulationPlaying()) {
+        currentSimulation.pauseSimulation();
+      }
       let isCompleted = isCellCompleted(completedCells, material, bevTemp, airTemp);
       showTrial(material, bevTemp, airTemp, isCompleted);
     }
