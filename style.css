@@ -36,16 +36,16 @@ h2 {
 }
 
 .model__label--air {
-  top: 56px;
+  top: 66px;
   left: 90px;
 }
 
 .model__label--cup {
-  top: 108px;
-  left: 30px;
+  top: 106px;
+  left: 28px;
 }
 
 .model__label--liquid {
-  top: 194px;
-  left: 89px;
+  top: 204px;
+  left: 99px;
 }

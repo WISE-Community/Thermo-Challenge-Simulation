@@ -53,6 +53,7 @@ class Simulation {
   playSimulation() {
     this.intervalId = setInterval(() => {
       if (this.currentTick >= worldSpecs.max_ticks) {
+        currentSimulation.pauseSimulation();
         this.showResetState();
       } else {
         this.showPlayState();

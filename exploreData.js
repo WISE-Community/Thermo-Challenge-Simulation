@@ -7,7 +7,7 @@ const worldSpecs = {
   max_y: 15,
   temperature_min: 0,
   temperature_max: 100,
-  flow_speed: 4.6,
+  flow_speed: 6.2,
   max_ticks: 30 * 30,
   series: [],
   trialId: null
@@ -24,7 +24,7 @@ const worldSpecs = {
 const worldObjects = {
   thermometers:[
     { x:0, y:-3, color:"#00FF00", saveSeries:true, id:"beverage" },
-    { x:0, y:7, color:"#FF00DD", id:"air" }
+    { x:0, y:8, color:"#FF00DD", id:"air" }
   ],
   cups: [
     {
@@ -32,7 +32,7 @@ const worldObjects = {
       y: -10,
       width: 16,
       height: 16,
-      thickness: 4,
+      thickness: 3,
       liquid: "Water",
       material: "",
       liquid_temperature: null,
@@ -41,38 +41,38 @@ const worldObjects = {
   ],
   air: {
     temperature: null,
-    conductivity: 100,
+    conductivity: 30,
     color: "#FFEECC"
   },
   liquids: {
     "Water": {
-      conductivity: 100,
+      conductivity: 80,
       color: "rgba(220,220,250,0.7)"
     }
   },
   materials: {
     "Aluminum": {
-      conductivity: 100,
+      conductivity: 130,
       color: "#000000"
     },
     "Wood": {
-      conductivity: 10,
+      conductivity: 6,
       color: "#774400"
     },
     "Styrofoam": {
-      conductivity: 1,
+      conductivity: 1.2,
       color: "#777777"
     },
     "Clay": {
-      conductivity: 20,
+      conductivity: 15,
       color: "#00B0AF"
     },
     "Glass": {
-      conductivity: 40,
+      conductivity: 50,
       color: "#1565C0"
     },
     "Plastic": {
-      conductivity: 20,
+      conductivity: 15,
       color: "#DD1188"
     }
   }
