@@ -7,7 +7,7 @@ const worldSpecs = {
   max_y: 15,
   temperature_min: 0,
   temperature_max: 100,
-  flow_speed: 4,
+  flow_speed: 4.6,
   max_ticks: 30 * 30,
   series: [],
   trialId: null
@@ -23,16 +23,16 @@ const worldSpecs = {
  */
 const worldObjects = {
   thermometers:[
-    { x:0, y:-1, color:"#00FF00", saveSeries:true, id:"beverage" },
+    { x:0, y:-3, color:"#00FF00", saveSeries:true, id:"beverage" },
     { x:0, y:7, color:"#FF00DD", id:"air" }
   ],
   cups: [
     {
-      x: -6,
-      y: -8,
-      width: 13,
-      height: 13,
-      thickness: 3,
+      x: -8,
+      y: -10,
+      width: 16,
+      height: 16,
+      thickness: 4,
       liquid: "Water",
       material: "",
       liquid_temperature: null,
@@ -52,34 +52,28 @@ const worldObjects = {
   },
   materials: {
     "Aluminum": {
-      conductivity: 200,
-      color: "#AAAAAA",
-      stroke_color: "#888888"
+      conductivity: 100,
+      color: "#000000"
     },
     "Wood": {
       conductivity: 10,
-      color: "#996622",
-      stroke_color: "#774400"
+      color: "#774400"
     },
     "Styrofoam": {
       conductivity: 1,
-      color: "#FFFFFF",
-      stroke_color: "#DDDDDD"
+      color: "#777777"
     },
     "Clay": {
       conductivity: 20,
-      color: "#FF8844",
-      stroke_color: "#DD6622"
+      color: "#00B0AF"
     },
     "Glass": {
       conductivity: 40,
-      color: "rgba(150,200,180,0.5)",
-      stroke_color: "rgba(100,150,130,0.8)"
+      color: "#1565C0"
     },
     "Plastic": {
       conductivity: 20,
-      color: "#FF33AA",
-      stroke_color: "#DD1188"
+      color: "#DD1188"
     }
   }
 };
@@ -180,7 +174,7 @@ function initWorld() {
 }
 
 function getCupMaterialColor(cup) {
-  return cup.material != null && cup.material.length > 0 ? (worldObjects.materials[cup.material].stroke_color != null ? worldObjects.materials[cup.material].stroke_color: worldObjects.materials[cup.material].color) : "#444444";
+  return cup.material != null && cup.material.length > 0 ? (worldObjects.materials[cup.material].color != null ? worldObjects.materials[cup.material].color: worldObjects.materials[cup.material].color) : "#444444";
 }
 
 /**
@@ -239,13 +233,23 @@ function getTrialAirTemperature(trialId) {
   return airTempStr.substring(0, airTempStr.length - 3);
 }
 
-function convertTempTextToTempNum(temperatureText) {
+function convertLiquidTempTextToTempNum(temperatureText) {
   if (temperatureText == "Hot") {
     return 90;
   } else if (temperatureText == "Warm") {
-    return 40;
+    return 50;
   } else {
-    return 5;
+    return 4;
+  }
+}
+
+function convertAirTempTextToTempNum(temperatureText) {
+  if (temperatureText == "Hot") {
+    return 40;
+  } else if (temperatureText == "Warm") {
+    return 30;
+  } else {
+    return 0;
   }
 }
 
@@ -286,10 +290,7 @@ function getVoxel(vx, vy) {
 
 /**
  * Returns HSL given integer temperature.
- * 0 degrees = white
- * 100 degrees = red
- * We use an exponential function so there can be a wider range for lower
- * temperatures (0->40) and ~50 will be pinkish.
+ * Using a rainbow-like, weather map type color spcetrum
  */
 function tempToHSL(temperature) {
   let temp2Decimals = temperature.toFixed(2);
@@ -299,9 +300,9 @@ function tempToHSL(temperature) {
     const temp_frac = (temperature - worldSpecs.temperature_min)
       / worldSpecs.temperature_range;
     const hslValue = {
-      h: 0,
+      h: 260 - (temp_frac * 280),
       s: "100%",
-      l: 100 - (65 * (temp_frac * temp_frac)) + "%"
+      l: "50%"
     };
     tempToHSLValues[temp2Decimals] = hslValue;
     return hslValue;
@@ -518,7 +519,7 @@ function getMaxX(componentState) {
 }
 
 function getCurrentCupMaterialColor() {
-  return worldObjects.materials[worldObjects.cups[0].material].stroke_color;
+  return worldObjects.materials[worldObjects.cups[0].material].color;
 }
 
 function getWorldState(tick, tickToHighlight) {
