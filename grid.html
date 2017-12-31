@@ -1,107 +1,86 @@
 <html>
-<head>
-  <title>Thermodynamics Challenge Explore Data</title>
-  <script src="jquery-1.11.1.min.js"></script>
-  <script src="grid.js"></script>
-  <script src="util.js"></script>
-  <style type="text/css">
-    .token {
-      width: 60px;
-      height: 60px;
-      line-height: 60px;
-      border: 2px solid gray;
-      margin-bottom: 5px;
-      margin-left: 5px;
-      text-align: center;
-      float: left;
-      background-color: #ffff0087;
-      cursor: pointer;
-      font-weight: bold;
-      -moz-border-radius: 60px;
-      -webkit-border-radius: 60px;
-      border-radius: 60px;
-    }
-
-    .squareclear {
-      width: 60px;
-      height: 60px;
-      line-height: 60px;
-      border: 1px dotted transparent;
-      margin-bottom: 5px;
-      margin-left: 5px;
-      text-align: center;
-      float: left;
-      color: black;
-    }
-
-    .squaredotted {
-      width: 60px;
-      height: 60px;
-      border: 1px dotted gray;
-      margin-bottom: 5px;
-      margin-left: 5px;
-      font-weight:bold;
-      float: left;
-      color: gray;
-      background-color: #d3d3d369;
-    }
-
-    .squaredotted:hover {
-      cursor: pointer;
-      border: 1px solid black;
-    }
-
-    .selectedGrid {
-      border: 1px solid black;
-      background-color: yellow;
-    }
-
-    .trialCompleted {
-      background-image: url("images/greenCheck.png");
-      background-repeat: no-repeat;
-      background-position-x: center;
-      background-position-y: center;
-    }
-  </style>
-</head>
-<body onload="init()">
-<div id="selectTrialGrid">
-  <div style="float:left; display: none">
-    <div class="token" id="token1">1</div>
-  </div>
-  <div style="float:left;">
-    <div class="squareclear"></div>
-    <div class="squareclear">Aluminum</div>
-    <div class="squareclear">Wood</div>
-    <div class="squareclear">Styrofoam</div>
-    <div class="squareclear">Clay</div>
-    <div class="squareclear">Glass</div>
-    <div class="squareclear">Plastic</div>
-    <div style="clear:both"></div>
-    <div class="squareclear">Hot</div>
-    <div class="squaredotted snappable" bevTemp="Hot" airTemp="Warm" material="Aluminum"></div>
-    <div class="squaredotted snappable" bevTemp="Hot" airTemp="Warm" material="Wood"></div>
-    <div class="squaredotted snappable" bevTemp="Hot" airTemp="Warm" material="Styrofoam"></div>
-    <div class="squaredotted snappable" bevTemp="Hot" airTemp="Warm" material="Clay"></div>
-    <div class="squaredotted snappable" bevTemp="Hot" airTemp="Warm" material="Glass"></div>
-    <div class="squaredotted snappable" bevTemp="Hot" airTemp="Warm" material="Plastic"></div>
-    <div style="clear:both"></div>
-    <div class="squareclear">Warm</div>
-    <div class="squaredotted snappable" bevTemp="Warm" airTemp="Warm" material="Aluminum"></div>
-    <div class="squaredotted snappable" bevTemp="Warm" airTemp="Warm" material="Wood"></div>
-    <div class="squaredotted snappable" bevTemp="Warm" airTemp="Warm" material="Styrofoam"></div>
-    <div class="squaredotted snappable" bevTemp="Warm" airTemp="Warm" material="Clay"></div>
-    <div class="squaredotted snappable" bevTemp="Warm" airTemp="Warm" material="Glass"></div>
-    <div class="squaredotted snappable" bevTemp="Warm" airTemp="Warm" material="Plastic"></div>
-    <div style="clear:both"></div>
-    <div class="squareclear">Cold</div>
-    <div class="squaredotted snappable" bevTemp="Cold" airTemp="Warm" material="Aluminum"></div>
-    <div class="squaredotted snappable" bevTemp="Cold" airTemp="Warm" material="Wood"></div>
-    <div class="squaredotted snappable" bevTemp="Cold" airTemp="Warm" material="Styrofoam"></div>
-    <div class="squaredotted snappable" bevTemp="Cold" airTemp="Warm" material="Clay"></div>
-    <div class="squaredotted snappable" bevTemp="Cold" airTemp="Warm" material="Glass"></div>
-    <div class="squaredotted snappable" bevTemp="Cold" airTemp="Warm" material="Plastic"></div>
-  </div>
-</div>
-</body>
+  <head>
+    <meta charset="UTF-8">
+    <title>Thermodynamics Challenge Explore Data</title>
+    <link rel="stylesheet" href="grid.css" />
+    <script src="jquery-1.11.1.min.js"></script>
+    <script src="grid.js"></script>
+    <script src="util.js"></script>
+  </head>
+  <body onload="init()">
+    <table class="selectTrialGrid">
+      <tr>
+        <th class="cell--head cell--head--row"></th>
+        <th class="cell--head aluminum">Aluminum</th>
+        <th class="cell--head wood">Wood</th>
+        <th class="cell--head styrofoam">Styrofoam</th>
+        <th class="cell--head clay">Clay</th>
+        <th class="cell--head glass">Glass</th>
+        <th class="cell--head plastic">Plastic</th>
+      </tr>
+      <tr>
+        <td class="cell--head cell--head--row">Hot</td>
+        <td class="choice" tabindex="0" role="button"
+          aria-label="Select Aluminum Hot" bevTemp="Hot" airTemp="Warm"
+          material="Aluminum"></td>
+        <td class="choice" tabindex="0" role="button"
+          aria-label="Select Wood Hot" bevTemp="Hot" airTemp="Warm"
+          material="Wood"></td>
+        <td class="choice" tabindex="0" role="button"
+          aria-label="Select Styrofoam Hot" bevTemp="Hot" airTemp="Warm"
+          material="Styrofoam"></td>
+        <td class="choice" tabindex="0" role="button"
+          aria-label="Select Clay Hot" bevTemp="Hot" airTemp="Warm"
+          material="Clay"></td>
+        <td class="choice" tabindex="0" role="button"
+          aria-label="Select Glass Hot" bevTemp="Hot" airTemp="Warm"
+          material="Glass"></td>
+        <td class="choice" tabindex="0" role="button"
+          aria-label="Select Plastic Hot" bevTemp="Hot" airTemp="Warm"
+          material="Plastic"></td>
+      </tr>
+      <tr>
+        <td class="cell--head cell--head--row">Warm</td>
+        <td class="choice" tabindex="0" role="button"
+          aria-label="Select Aluminum Warm" bevTemp="Warm" airTemp="Warm"
+          material="Aluminum"></td>
+        <td class="choice" tabindex="0" role="button"
+          aria-label="Select Wood Warm" bevTemp="Warm" airTemp="Warm"
+          material="Wood"></td>
+        <td class="choice" tabindex="0" role="button"
+          aria-label="Select Styrofoam Warm" bevTemp="Warm" airTemp="Warm"
+          material="Styrofoam"></td>
+        <td class="choice" tabindex="0" role="button"
+          aria-label="Select Clay Warm" bevTemp="Warm" airTemp="Warm"
+          material="Clay"></td>
+        <td class="choice" tabindex="0" role="button"
+          aria-label="Select Glass Warm" bevTemp="Warm" airTemp="Warm"
+          material="Glass"></td>
+        <td class="choice" tabindex="0" role="button"
+          aria-label="Select Plastic Warm" bevTemp="Warm" airTemp="Warm"
+          material="Plastic"></td>
+      </tr>
+      <tr>
+        <td class="cell--head cell--head--row">Cold</td>
+        <td class="choice" tabindex="0" role="button"
+          aria-label="Select Aluminum Cold" bevTemp="Cold" airTemp="Warm"
+          material="Aluminum"></td>
+        <td class="choice" tabindex="0" role="button"
+          aria-label="Select Wood Cold" bevTemp="Cold" airTemp="Warm"
+          material="Wood"></td>
+        <td class="choice" tabindex="0" role="button"
+          aria-label="Select Styrofoam Cold" bevTemp="Cold" airTemp="Warm"
+          material="Styrofoam"></td>
+        <td class="choice" tabindex="0" role="button"
+          aria-label="Select Clay Cold" bevTemp="Cold" airTemp="Warm"
+          material="Clay"></td>
+        <td class="choice" tabindex="0" role="button"
+          aria-label="Select Glass Cold" bevTemp="Cold" airTemp="Warm"
+          material="Glass"></td>
+        <td class="choice" tabindex="0" role="button"
+          aria-label="Select Plastic Cold" bevTemp="Cold" airTemp="Warm"
+          material="Plastic"></td>
+      </tr>
+    </table>
+  </body>
 </html>

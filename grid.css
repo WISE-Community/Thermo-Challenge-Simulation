@@ -1,0 +1,88 @@
+body {
+  font-family: Arial, Helvetica Neue, Helvetica, sans-serif;
+}
+
+.selectTrialGrid {
+  width: 100%;
+  border: 0 none;
+  font-size: 14px;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+th, td {
+  height: 50px;
+}
+
+td {
+  border: 1px solid #bbbbbb;
+  text-align: center;
+  background-color: #f7f7f7;
+}
+
+.cell--head {
+  font-weight: bold;
+  border: 0 none;
+  background-color: #ffffff;
+}
+
+.cell--head--row {
+  width: 80px;
+}
+
+.choice {
+  cursor: pointer;
+  background-image: url("images/ic_help_aaaaaa_24px.svg");
+  background-size: 40px;
+  background-repeat: no-repeat;
+  background-position: center center;
+  transition: 250ms all;
+  text-align: right;
+  vertical-align: bottom;
+  font-size: 16px;
+  color: #999999;
+  padding: 2px 4px;
+}
+
+.choice:hover, .choice:focus {
+  background-color: #eeeeee;
+  outline: none;
+}
+
+.completed {
+  background-color: #ffffff;
+  background-image: url("images/ic_done_00C853_24px.svg");
+}
+
+.selected {
+  border: 3px solid #FFC107;
+  background-color: #FFF7E1;
+}
+
+.selected:hover, .selected:focus {
+  background-color: #FFF7E1;
+}
+
+.aluminum {
+  color: #000000;
+}
+
+.wood {
+  color: #774400;
+}
+
+.styrofoam {
+  color: #777777;
+}
+
+.clay {
+  color: #00B0AF;
+}
+
+.glass {
+  color: #1565C0;
+}
+
+.plastic {
+  color: #DD1188;
+}

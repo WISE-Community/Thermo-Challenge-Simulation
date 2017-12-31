@@ -13,7 +13,7 @@ function init() {
 }
 
 function initCellClickedHandlers() {
-  $(".squaredotted").click(function(event, ui) {
+  $(".choice").click(function(event, ui) {
     grids.cellClicked($(this));
   });
 }
@@ -36,7 +36,7 @@ class Grids {
   }
 
   highlightSelectedCells() {
-    $(".squaredotted").removeClass("selectedGrid");
+    $(".choice").removeClass("selected");
     let selectedCells = this.getSelectedCells();
     for (let selectedCell of selectedCells) {
       this.highlightCell(selectedCell.material, selectedCell.bevTemp, selectedCell.airTemp);
@@ -63,7 +63,7 @@ class Grids {
   }
 
   getCellDOM(material, bevTemp, airTemp) {
-    return $('div[material="' + material + '"][bevTemp="' + bevTemp + '"][airTemp="' + airTemp + '"]');
+    return $('td[material="' + material + '"][bevTemp="' + bevTemp + '"][airTemp="' + airTemp + '"]');
   }
 
   createCell(material, bevTemp, airTemp) {
@@ -144,11 +144,11 @@ class Grids {
   }
 
   highlightCell(material, bevTemp, airTemp) {
-    this.getCellDOM(material, bevTemp, airTemp).addClass("selectedGrid");
+    this.getCellDOM(material, bevTemp, airTemp).addClass("selected");
   }
 
   showCheckOnCell(material, bevTemp, airTemp) {
-    this.getCellDOM(material, bevTemp, airTemp).addClass("trialCompleted");
+    this.getCellDOM(material, bevTemp, airTemp).addClass("completed");
   }
 
   showOrderNumberOnCell(material, bevTemp, airTemp , order) {
