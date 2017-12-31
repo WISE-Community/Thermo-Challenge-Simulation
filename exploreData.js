@@ -41,7 +41,7 @@ const worldObjects = {
   ],
   air: {
     temperature: null,
-    conductivity: 30,
+    conductivity: 40,
     color: "#FFEECC"
   },
   liquids: {
@@ -64,11 +64,11 @@ const worldObjects = {
       color: "#777777"
     },
     "Clay": {
-      conductivity: 15,
+      conductivity: 12,
       color: "#00B0AF"
     },
     "Glass": {
-      conductivity: 50,
+      conductivity: 30,
       color: "#1565C0"
     },
     "Plastic": {
@@ -188,6 +188,7 @@ function getCupMaterialColor(cup) {
 function showTrial(material, beverageTempText, airTempText, isCompleted) {
   currentSimulation = new Simulation(material, beverageTempText, airTempText,
       isCompleted);
+  $('.intro').hide();
   currentSimulation.generateTrial();
   currentSimulation.showTrialRenderingBox();
   currentSimulation.showTrialIntialState();
@@ -212,8 +213,7 @@ function getClosestTickTo30(tick) {
 }
 
 function getTrialId(material, bevTemperatureText, airTemperatureText) {
-  return material + "-" + bevTemperatureText + "Bev" + "-" +
-      airTemperatureText + "Air";
+  return material + "-" + bevTemperatureText + "Bev";
 }
 
 function getTrialMaterial(trialId) {
