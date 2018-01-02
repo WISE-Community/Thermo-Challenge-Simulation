@@ -213,7 +213,7 @@ function getClosestTickTo30(tick) {
 }
 
 function getTrialId(material, bevTemperatureText, airTemperatureText) {
-  return material + "-" + bevTemperatureText + "Bev";
+  return material + "-" + bevTemperatureText + "Liquid";
 }
 
 function getTrialMaterial(trialId) {

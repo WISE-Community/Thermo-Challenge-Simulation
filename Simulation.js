@@ -89,7 +89,7 @@ class Simulation {
   showTime() {
     let currentTickPositionRatio = this.currentTick / this.maxTicks;
     let minutesPlayed = Math.ceil(currentTickPositionRatio * this.maxDurationMinutes);
-    $("#timePlaying_" + this.trialId).html(minutesPlayed + " / " + this.maxDurationMinutes);
+    $("#timePlaying_" + this.trialId).html(minutesPlayed + " min");
   }
 
   showTrialAtTick(tick) {
@@ -149,13 +149,13 @@ class Simulation {
     const color = getCupMaterialColor(cup);
     $("#trial").empty();
     $("#trial").append(
-      `<h2 style="color: ${color};">${this.material} Cup / ${this.beverageTempText} Beverage</h2>
-      <div class="timeline">
-        <input id="showWorldsSlider_${this.trialId}" style="width:400px" type="range" min="0" max="300" step="1" value="0"/>
-        <span style="margin-left:10px" id="timePlaying_${this.trialId}"></span>
+      `<div class="controls">
+        <input id="playPauseWorld_${this.trialId}" class="play" type="button" value="Play"/>
+        <input id="showWorldsSlider_${this.trialId}" class="timeline" type="range" min="0" max="300" step="1" value="0"/>
+        <div id="timePlaying_${this.trialId}" class="time"></div>
       </div>
       <div class="model">
-        <input id="playPauseWorld_${this.trialId}" class="play" type="button" value="Play"/>
+        <h2 class="title" style="color: ${color};">${this.material} Cup / ${this.beverageTempText} Liquid</h2>
         <span class="model__label model__label--air">Air</span>
         <span class="model__label model__label--cup" style="color: ${color};">Cup</span>
         <span class="model__label model__label--liquid">Liquid</span>
@@ -164,6 +164,7 @@ class Simulation {
       </div>`
     );
 
+    this.showTime();
     this.showThermometerLegend();
     this.currentStage = new createjs.Stage($(`#canvas_${this.trialId}`)[0]);
     this.currentHeatShape = new createjs.Shape();
