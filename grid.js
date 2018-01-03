@@ -16,6 +16,11 @@ function initCellClickedHandlers() {
   $(".choice").click(function(event, ui) {
     grids.cellClicked($(this));
   });
+
+  if (isInterpretMode()) {
+    $(".choice")
+      .addClass("disabled");
+  }
 }
 
 class Grids {
@@ -148,7 +153,9 @@ class Grids {
   }
 
   showCheckOnCell(material, bevTemp, airTemp) {
-    this.getCellDOM(material, bevTemp, airTemp).addClass("completed");
+    this.getCellDOM(material, bevTemp, airTemp)
+      .addClass("completed")
+      .removeClass("disabled");
   }
 
   showOrderNumberOnCell(material, bevTemp, airTemp , order) {
@@ -196,16 +203,20 @@ class InterpretGrids extends Grids {
   }
 
   cellClicked(cellDOMElement) {
-    let material = cellDOMElement.attr("material");
-    let bevTemp = cellDOMElement.attr("bevTemp");
-    let airTemp = cellDOMElement.attr("airTemp");
-    if (this.isCellSelected(material, bevTemp, airTemp)) {
-      this.removeSelectedCell(material, bevTemp, airTemp);
+    if (cellDOMElement.hasClass("disabled")) {
+      alert("You haven't collected data for this trial!");
     } else {
-      this.addSelectedCell(material, bevTemp, airTemp);
+      let material = cellDOMElement.attr("material");
+      let bevTemp = cellDOMElement.attr("bevTemp");
+      let airTemp = cellDOMElement.attr("airTemp");
+      if (this.isCellSelected(material, bevTemp, airTemp)) {
+        this.removeSelectedCell(material, bevTemp, airTemp);
+      } else {
+        this.addSelectedCell(material, bevTemp, airTemp);
+      }
+      this.highlightSelectedCells();
+      this.saveToWISE();
     }
-    this.highlightSelectedCells();
-    this.saveToWISE();
   }
 }
 

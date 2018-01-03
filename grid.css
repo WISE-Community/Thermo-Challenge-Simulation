@@ -54,6 +54,14 @@ td {
   background-image: url("images/ic_done_00C853_24px.svg");
 }
 
+.disabled {
+  cursor: not-allowed;
+}
+
+.disabled:hover {
+  background-color: #f7f7f7;
+}
+
 .selected {
   border: 3px solid #FFC107;
   background-color: #FFF7E1;
