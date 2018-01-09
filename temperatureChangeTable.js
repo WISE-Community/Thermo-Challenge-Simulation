@@ -11,19 +11,30 @@ function init() {
 
 function renderChart(categories, series, lowerRangePoint, upperRangePoint) {
   let title = 'Change in temperature from ' + lowerRangePoint + ' min to ' + upperRangePoint + ' min';
+  let alternateGridColor = null;
+  if (categories.length > 1) {
+    alternateGridColor = '#F7F7F7';
+  }
   chart = new Highcharts.chart('container', {
       chart: {
-          type: 'column'
+          type: 'column',
+          animation: false
+      },
+      plotOptions: {
+          series: {
+              animation: false
+          }
       },
       title: {
           text: title
       },
       xAxis: {
-          categories: categories
+          categories: categories,
+          alternateGridColor: alternateGridColor
       },
       yAxis: {
-          min: -26,
-          max: 26,
+          min: -50,
+          max: 50,
           title: {
               text: 'Change in Temperature'
           }
@@ -238,15 +249,17 @@ function addTrialRowToTable(series, currentMouseOverPointXValue) {
 }
 
 function getRangeClosestToMouseOverPoint(seriesData, currentMouseOverPointXValue) {
-  let lowerDataPoint = seriesData[0][0];
-  let upperDataPoint = seriesData[0][0];
+  let lowerDataPoint = seriesData[0];
+  let upperDataPoint = seriesData[0];
+  let previousUpperDataPoint = seriesData[0];
 
-  for (let i = 0, j = 1; j < seriesData.length; i++, j++) {
-    lowerDataPoint = seriesData[i];
-    upperDataPoint = seriesData[j];
-    if (lowerDataPoint.x <= currentMouseOverPointXValue &&
-        currentMouseOverPointXValue < upperDataPoint.x) {
+  for (let x = 0; x < seriesData.length; x++) {
+    upperDataPoint = seriesData[x];
+    if (currentMouseOverPointXValue <= upperDataPoint.x) {
+      upperDataPoint = previousUpperDataPoint;
       break;
+    } else {
+      previousUpperDataPoint = upperDataPoint;
     }
   }
   return [lowerDataPoint, upperDataPoint];
