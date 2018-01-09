@@ -546,9 +546,9 @@ function getWorldState(tick, tickToHighlight) {
   };
 
   if (tickToHighlight != null) {
-    studentData.showTooltipOnX = tickToHighlight * 2 / 30;
+    studentData.xPointToHighlight = tickToHighlight * 2 / 30;
   } else {
-    studentData.showTooltipOnX = tick * 2 / 30;
+    studentData.xPointToHighlight = tick * 2 / 30;
   }
 
   return studentData;
