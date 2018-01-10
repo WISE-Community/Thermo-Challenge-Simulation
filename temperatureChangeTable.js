@@ -97,8 +97,8 @@ function handleConnectedComponentStudentDataChanged(componentState) {
 function generateChartData(trials, x) {
   let categories = [];
   let series = [];
-  let lowerRangePoint = null;
-  let upperRangePoint = null;
+  let lowerRangePoint = 0;
+  let upperRangePoint = 0;
 
   for (let trial of trials) {
     if (trial.show) {
@@ -106,9 +106,9 @@ function generateChartData(trials, x) {
       let material = getMaterialFromTrialId(trialId);
       let bevTemp = getBevTempFromTrialId(trialId);
       let range = getRangeClosestToMouseOverPoint(trial.series[0].data, x);
-      lowerRangePoint = range[0];
-      upperRangePoint = range[1];
-      let changeInTemperature = upperRangePoint.y - lowerRangePoint.y;
+      let lowerRangePointObject = range[0];
+      let upperRangePointObject = range[1];
+      let changeInTemperature = upperRangePointObject.y - lowerRangePointObject.y;
       let color = trial.series[0].color;
 
       addCategory(categories, bevTemp);
@@ -116,6 +116,9 @@ function generateChartData(trials, x) {
       let singleSeries = getSeriesByName(series, material);
       setSeriesValue(singleSeries, bevTemp, changeInTemperature);
       setSeriesColor(singleSeries, color);
+
+      lowerRangePoint = lowerRangePointObject.x;
+      upperRangePoint = upperRangePointObject.x;
     }
   }
 
@@ -125,8 +128,8 @@ function generateChartData(trials, x) {
   return {
     categories: categories,
     series: series,
-    lowerRangePoint: lowerRangePoint.x,
-    upperRangePoint: upperRangePoint.x
+    lowerRangePoint: lowerRangePoint,
+    upperRangePoint: upperRangePoint
   }
 }
 
