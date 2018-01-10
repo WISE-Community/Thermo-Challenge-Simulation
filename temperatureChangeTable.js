@@ -124,7 +124,6 @@ function generateChartData(trials, x) {
 
   filterTemperatures(categories, series);
 
-
   return {
     categories: categories,
     series: series,

@@ -18,8 +18,7 @@ function initCellClickedHandlers() {
   });
 
   if (isInterpretMode()) {
-    $(".choice")
-      .addClass("disabled");
+    $(".choice").addClass("disabled");
   }
 }
 
@@ -154,8 +153,8 @@ class Grids {
 
   showCheckOnCell(material, bevTemp, airTemp) {
     this.getCellDOM(material, bevTemp, airTemp)
-      .addClass("completed")
-      .removeClass("disabled");
+        .addClass("completed")
+        .removeClass("disabled");
   }
 
   showOrderNumberOnCell(material, bevTemp, airTemp , order) {
@@ -221,9 +220,7 @@ class InterpretGrids extends Grids {
 }
 
 function sendGetParametersMessage() {
-  let message = {};
-  message.messageType = 'getParameters';
-  sendMessage(message);
+  sendMessageToParent({ messageType: 'getParameters' });
 }
 
 function receivedGetParametersMessage(parameters) {
@@ -232,13 +229,10 @@ function receivedGetParametersMessage(parameters) {
 }
 
 function sendApplicationInitializedMessage() {
-  let message = {};
-  message.messageType = 'applicationInitialized';
-  sendMessage(message);
+  sendMessageToParent({ messageType: 'applicationInitialized' });
 }
 
 function loadComponentState(componentState) {
-  let studentData = componentState.studentData;
   grids.loadComponentState(componentState);
 }
 
@@ -246,7 +240,7 @@ function loadComponentState(componentState) {
  * Send a message to the parent
  * @param the message to send to the parent
  */
-function sendMessage(message) {
+function sendMessageToParent(message) {
   window.postMessage(message, "*");
 }
 
@@ -254,10 +248,9 @@ function sendMessage(message) {
  * Receive a message from the parent
  * @param message the message from the parent
  */
-function receiveMessage(message) {
+function receiveMessageFromParent(message) {
   if (message != null) {
     let messageData = message.data;
-
     if (messageData != null) {
       if (messageData.messageType == 'studentWork') {
         /*
@@ -304,5 +297,5 @@ function receiveMessage(message) {
   }
 }
 
-// listen for messages from the parent
-window.addEventListener('message', receiveMessage);
+// listen for messages from the parent frame
+window.addEventListener('message', receiveMessageFromParent);

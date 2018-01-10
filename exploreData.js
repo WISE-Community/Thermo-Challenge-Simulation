@@ -523,7 +523,6 @@ function getCurrentCupMaterialColor() {
 }
 
 function getWorldState(tick, tickToHighlight) {
-
   const studentData = {
     ticks: world.ticks,
     materialText: currentSimulation.material,
@@ -550,7 +549,6 @@ function getWorldState(tick, tickToHighlight) {
   } else {
     studentData.xPointToHighlight = tick * 2 / 30;
   }
-
   return studentData;
 }
 
