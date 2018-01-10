@@ -10,7 +10,7 @@ function init() {
 }
 
 function renderChart(categories, series, lowerRangePoint, upperRangePoint) {
-  let title = 'Total change in temperature from ' + lowerRangePoint + ' min to ' + upperRangePoint + ' min';
+  let title = 'Total change in temperature (Celsius) from ' + lowerRangePoint + ' min to ' + upperRangePoint + ' min';
   let alternateGridColor = null;
   if (categories.length > 1) {
     alternateGridColor = '#F7F7F7';
@@ -33,10 +33,10 @@ function renderChart(categories, series, lowerRangePoint, upperRangePoint) {
           alternateGridColor: alternateGridColor
       },
       yAxis: {
-          min: -50,
-          max: 50,
+          min: -60,
+          max: 30,
           title: {
-              text: 'Change in Temperature'
+              text: 'Change in Temperature (Celsius)'
           }
       },
       credits: {
