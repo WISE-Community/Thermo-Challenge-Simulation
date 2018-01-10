@@ -10,7 +10,7 @@ function init() {
 }
 
 function renderChart(categories, series, lowerRangePoint, upperRangePoint) {
-  let title = 'Change in temperature from ' + lowerRangePoint + ' min to ' + upperRangePoint + ' min';
+  let title = 'Total change in temperature from ' + lowerRangePoint + ' min to ' + upperRangePoint + ' min';
   let alternateGridColor = null;
   if (categories.length > 1) {
     alternateGridColor = '#F7F7F7';
