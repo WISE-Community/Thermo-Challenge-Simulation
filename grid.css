@@ -30,13 +30,17 @@ td {
   width: 80px;
 }
 
-.choice {
-  cursor: pointer;
+.unexplored {
   background-image: url("images/ic_help_aaaaaa_24px.svg");
   background-size: 40px;
   background-repeat: no-repeat;
   background-position: center center;
   transition: 250ms all;
+}
+
+.choice {
+  cursor: pointer;
+  background-repeat: no-repeat;
   text-align: right;
   vertical-align: bottom;
   font-size: 16px;
@@ -50,8 +54,10 @@ td {
 }
 
 .completed {
+  background-size: 40px;
   background-color: #ffffff;
   background-image: url("images/ic_done_00C853_24px.svg");
+  background-position: center center;
 }
 
 .disabled {
@@ -60,6 +66,27 @@ td {
 
 .disabled:hover {
   background-color: #f7f7f7;
+}
+
+.flagged {
+  background-size: 20px;
+  background-image: url("images/yellow_star.png");
+  background-position: left top;
+}
+
+.completed.flagged {
+  background-color: #ffffff;
+  background-size: 40px, 20px;
+  background-repeat: no-repeat;
+  background-image: url("images/ic_done_00C853_24px.svg"), url("images/yellow_star.png");
+  background-position: center center, left top;
+}
+
+.unexplored.flagged {
+  background-size: 40px, 20px;
+  background-repeat: no-repeat;
+  background-image: url("images/ic_help_aaaaaa_24px.svg"), url("images/yellow_star.png");
+  background-position: center center, left top;
 }
 
 .selected {

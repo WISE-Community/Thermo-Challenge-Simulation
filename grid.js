@@ -5,6 +5,8 @@ let materials = ['Aluminum', 'Wood', 'Styrofoam', 'Clay', 'Glass', 'Plastic'];
 function init() {
   if (isCollectMode()) {
     grids = new CollectionGrids();
+  } else if (isFlagMode()) {
+    grids = new FlagGrids();
   } else if (isInterpretMode()) {
     grids = new InterpretGrids();
   }
@@ -25,6 +27,7 @@ function initCellClickedHandlers() {
 class Grids {
   constructor() {
     this.completedCells = [];
+    this.flaggedCells = [];
     this.selectedCells = [];
   }
 
@@ -32,6 +35,9 @@ class Grids {
     let studentData = componentState.studentData;
     if (studentData.completedCells != null) {
       this.completedCells = studentData.completedCells;
+    }
+    if (studentData.flaggedCells != null) {
+      this.flaggedCells = studentData.flaggedCells;
     }
     if (studentData.selectedCells != null) {
       this.selectedCells = studentData.selectedCells;
@@ -41,21 +47,28 @@ class Grids {
 
   highlightSelectedCells() {
     $(".choice").removeClass("selected");
-    let selectedCells = this.getSelectedCells();
-    for (let selectedCell of selectedCells) {
-      this.highlightCell(selectedCell.material, selectedCell.bevTemp, selectedCell.airTemp);
+    for (const selectedCell of this.selectedCells) {
+      this.highlightCell(selectedCell);
     }
   }
 
   refreshCells() {
     this.highlightSelectedCells();
     this.showCheckOnCells();
+    this.showFlaggedCells();
     this.showCellOrders();
   }
 
   showCheckOnCells() {
-    for (let cell of this.completedCells) {
+    for (const cell of this.completedCells) {
       this.showCheckOnCell(cell.material, cell.bevTemp, cell.airTemp);
+    }
+  }
+
+  showFlaggedCells() {
+    $(".choice").removeClass("flagged");
+    for (const flaggedCell of this.flaggedCells) {
+      this.flagCell(flaggedCell);
     }
   }
 
@@ -93,10 +106,6 @@ class Grids {
     return false;
   }
 
-  getCompletedCells() {
-    return this.completedCells;
-  }
-
   addSelectedCell(material, bevTemp, airTemp) {
     this.selectedCells.push(this.createCell(material, bevTemp, airTemp));
   }
@@ -110,10 +119,6 @@ class Grids {
     return false;
   }
 
-  getSelectedCells() {
-    return this.selectedCells;
-  }
-
   removeSelectedCell(material, bevTemp, airTemp) {
     for (let c = 0; c < this.selectedCells.length; c++) {
       let selectedCell = this.selectedCells[c];
@@ -122,11 +127,6 @@ class Grids {
         c--;
       }
     }
-  }
-
-  setOneSelectedCell(material, bevTemp, airTemp) {
-    this.clearSelectedCells();
-    this.addSelectedCell(material, bevTemp, airTemp);
   }
 
   clearSelectedCells() {
@@ -138,22 +138,23 @@ class Grids {
   }
 
   cellClicked(cellDOMElement) {
-    let material = cellDOMElement.attr("material");
-    let bevTemp = cellDOMElement.attr("bevTemp");
-    let airTemp = cellDOMElement.attr("airTemp");
-
-    this.setOneSelectedCell(material, bevTemp, airTemp);
-    this.highlightSelectedCells();
-    this.saveToWISE();
+    // overridden by children
   }
 
-  highlightCell(material, bevTemp, airTemp) {
-    this.getCellDOM(material, bevTemp, airTemp).addClass("selected");
+  highlightCell(cell) {
+    this.getCellDOM(cell.material, cell.bevTemp, cell.airTemp)
+        .addClass("selected");
+  }
+
+  flagCell(cell) {
+    this.getCellDOM(cell.material, cell.bevTemp, cell.airTemp)
+        .addClass("flagged");
   }
 
   showCheckOnCell(material, bevTemp, airTemp) {
     this.getCellDOM(material, bevTemp, airTemp)
         .addClass("completed")
+        .removeClass("unexplored")
         .removeClass("disabled");
   }
 
@@ -179,26 +180,88 @@ class Grids {
       timestamp: new Date().getTime(),
       studentData: {
         completedCells: this.completedCells,
+        flaggedCells: this.flaggedCells,
         selectedCells: this.selectedCells
       }
     };
     try {
-      window.postMessage(componentState, "*");
+      sendMessageToParent(componentState);
     } catch(err) {
       console.log("not posted");
     }
   }
 }
 
+class FlagGrids extends Grids {
+  constructor() {
+    super();
+  }
+
+  cellClicked(cellDOMElement) {
+    let material = cellDOMElement.attr("material");
+    let bevTemp = cellDOMElement.attr("bevTemp");
+    let airTemp = cellDOMElement.attr("airTemp");
+    if (this.isCellFlagged(material, bevTemp, airTemp)) {
+      this.removeFlaggedCell(material, bevTemp, airTemp);
+    } else {
+      this.addFlaggedCell(material, bevTemp, airTemp);
+    }
+    this.showFlaggedCells();
+    this.saveToWISE();
+  }
+
+  addFlaggedCell(material, bevTemp, airTemp) {
+    if (!this.isCellFlagged(material, bevTemp, airTemp)) {
+      this.flaggedCells.push(this.createCell(material, bevTemp, airTemp));
+    }
+  }
+
+  removeFlaggedCell(material, bevTemp, airTemp) {
+    for (let c = 0; c < this.flaggedCells.length; c++) {
+      let flaggedCell = this.flaggedCells[c];
+      if (this.cellAttributesMatch(flaggedCell, material, bevTemp, airTemp)) {
+        this.flaggedCells.splice(c, 1);
+        c--;
+      }
+    }
+  }
+
+  isCellFlagged(material, bevTemp, airTemp) {
+    for (let flaggedCells of this.flaggedCells) {
+      if (this.cellAttributesMatch(flaggedCells, material, bevTemp, airTemp)) {
+        return true;
+      }
+    }
+    return false;
+  }
+}
+
 class CollectionGrids extends Grids {
   constructor() {
     super();
+    $(".choice").addClass("unexplored");
+  }
+
+  cellClicked(cellDOMElement) {
+    let material = cellDOMElement.attr("material");
+    let bevTemp = cellDOMElement.attr("bevTemp");
+    let airTemp = cellDOMElement.attr("airTemp");
+
+    this.setOneSelectedCell(material, bevTemp, airTemp);
+    this.highlightSelectedCells();
+    this.saveToWISE();
+  }
+
+  setOneSelectedCell(material, bevTemp, airTemp) {
+    this.clearSelectedCells();
+    this.addSelectedCell(material, bevTemp, airTemp);
   }
 }
 
 class InterpretGrids extends Grids {
   constructor() {
     super();
+    $(".choice").addClass("unexplored");
   }
 
   cellClicked(cellDOMElement) {
