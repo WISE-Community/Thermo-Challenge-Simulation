@@ -42,13 +42,15 @@ function isShowSelectTrialGrid() {
 }
 
 function isCollectMode() {
-  const mode = getURLParameters("mode");
-  return mode == 'collect';
+  return getURLParameters("mode") == 'collect';
+}
+
+function isFlagMode() {
+  return getURLParameters("mode") == 'flag';
 }
 
 function isInterpretMode() {
-  const mode = getURLParameters("mode");
-  return mode == 'interpret';
+  return getURLParameters("mode") == 'interpret';
 }
 
 function getStartingMaterial() {

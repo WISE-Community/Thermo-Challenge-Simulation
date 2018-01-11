@@ -102,9 +102,9 @@ class Simulation {
       const rectXInitial = worldSpecs.width_px/2 + worldSpecs.voxel_width*voxel.x - worldSpecs.voxel_width/2;
       const rectYInitial = worldSpecs.height_px/2 - worldSpecs.voxel_height*voxel.y - worldSpecs.voxel_height/2;
       this.currentHeatShape.graphics
-        .beginStroke(stroke_color).beginFill(heat_color)
-        .drawRect(rectXInitial, rectYInitial, worldSpecs.voxel_width, worldSpecs.voxel_height)
-        .endFill().endStroke();
+          .beginStroke(stroke_color).beginFill(heat_color)
+          .drawRect(rectXInitial, rectYInitial, worldSpecs.voxel_width, worldSpecs.voxel_height)
+          .endFill().endStroke();
     }
 
     this.showThermometerReadings(worldData);
@@ -249,20 +249,21 @@ class Simulation {
 
   updateLiquidTemperatureGaugeLabel(temperature) {
     const gaugeLabel =
-      this.thermometerLegendStage.getChildByName("liquidTempGaugeLabel");
+        this.thermometerLegendStage.getChildByName("liquidTempGaugeLabel");
     gaugeLabel.text = temperature.toFixed(1);
     const heatMap =
-      this.thermometerLegendStage.getChildByName("liquidTempHeatMap");
+        this.thermometerLegendStage.getChildByName("liquidTempHeatMap");
     const tempLabelYOffset = 32 + heatMap.height_px - (temperature / 100) * heatMap.height_px;
     gaugeLabel.y = tempLabelYOffset;
   }
 
   updateLiquidTemperatureGaugeLine(temperature) {
     const gaugeLine =
-      this.thermometerLegendStage.getChildByName("liquidTempGaugeLine");
+        this.thermometerLegendStage.getChildByName("liquidTempGaugeLine");
     const heatMap =
-      this.thermometerLegendStage.getChildByName("liquidTempHeatMap");
-    const tempLineYOffset = 32 + heatMap.height_px - (temperature / 100) * heatMap.height_px;
+        this.thermometerLegendStage.getChildByName("liquidTempHeatMap");
+    const tempLineYOffset =
+        32 + heatMap.height_px - (temperature / 100) * heatMap.height_px;
     gaugeLine.y = tempLineYOffset;
   }
 
@@ -275,7 +276,7 @@ class Simulation {
     const line_height_px = 5;
     const line_width_px = 40;
     gaugeLine.graphics.beginFill(col)
-      .drawRect(20, line_height_px, line_width_px, line_height_px).endFill();
+        .drawRect(20, line_height_px, line_width_px, line_height_px).endFill();
     this.thermometerLegendStage.addChild(gaugeLine);
   }
 
@@ -289,19 +290,19 @@ class Simulation {
 
   updateAirTemperatureGaugeLabel(temperature) {
     const gaugeLabel =
-      this.thermometerLegendStage.getChildByName("airTempGaugeLabel");
+        this.thermometerLegendStage.getChildByName("airTempGaugeLabel");
     gaugeLabel.text = temperature.toFixed(1);
     const heatMap =
-      this.thermometerLegendStage.getChildByName("airTempHeatMap");
+        this.thermometerLegendStage.getChildByName("airTempHeatMap");
     const tempLabelYOffset = 32 + heatMap.height_px - (temperature / 100) * heatMap.height_px;
     gaugeLabel.y = tempLabelYOffset;
   }
 
   updateAirTemperatureGaugeLine(temperature) {
     const gaugeLine =
-      this.thermometerLegendStage.getChildByName("airTempGaugeLine");
+        this.thermometerLegendStage.getChildByName("airTempGaugeLine");
     const heatMap =
-      this.thermometerLegendStage.getChildByName("airTempHeatMap");
+        this.thermometerLegendStage.getChildByName("airTempHeatMap");
     const tempLineYOffset = 32 + heatMap.height_px - (temperature / 100) * heatMap.height_px;
     gaugeLine.y = tempLineYOffset;
   }
@@ -349,7 +350,7 @@ class Simulation {
       const col = "hsl(" + hsl.h + "," + hsl.s + "," + hsl.l + ")";
       const height_px = colorMapShape.height_px / (worldSpecs.temperature_range+1);
       colorMapShape.graphics.beginFill(col)
-        .drawRect(20, 40 + (worldSpecs.temperature_max - t) * height_px, colorMapShape.width_px, height_px).endFill();
+          .drawRect(20, 40 + (worldSpecs.temperature_max - t) * height_px, colorMapShape.width_px, height_px).endFill();
     }
     colorMapShape.cache(20, 40, colorMapShape.width_px, colorMapShape.height_px);
     return colorMapShape;
@@ -381,7 +382,7 @@ class Simulation {
   setupTrial() {
     worldObjects.cups[0].material = this.material;
     worldObjects.cups[0].liquid_temperature =
-      convertLiquidTempTextToTempNum(this.beverageTempText);
+        convertLiquidTempTextToTempNum(this.beverageTempText);
     worldObjects.air.temperature = convertAirTempTextToTempNum(this.airTempText);
     initWorld();
     world.ticks = 0;
@@ -426,7 +427,7 @@ class Simulation {
         if (neighbor != null) {
           const con = Math.min(neighbor.conductivity, my_con);
           netFlowOfEnergy += worldSpecs.flow_speed * con / framerate
-            * (neighbor.temperature - my_temp) / worldSpecs.temperature_range;
+              * (neighbor.temperature - my_temp) / worldSpecs.temperature_range;
         }
       }
 
@@ -446,7 +447,7 @@ class Simulation {
       thermometer.temperature = voxel.temperature;
       thermometer.text.text = voxel.temperature.toFixed(1) + "°C";
       if (thermometer.saveSeries != null && thermometer.saveSeries &&
-        (world.ticks % 30 == 0)) {
+          (world.ticks % 30 == 0)) {
         currentSimulation.data.push({x:world.ticks / worldSpecs.max_ticks * 60, y:voxel.temperature});
         seriesCount++;
       }
@@ -465,10 +466,10 @@ class Simulation {
       // draw outlines to match cup color
       const outline = cup.outline = new createjs.Shape();
       outline.graphics.setStrokeStyle(1).beginStroke('#000000')
-        .drawRect(topLeft.x0, topLeft.y0, cup.width*worldSpecs.voxel_width, cup.height*worldSpecs.voxel_height).endStroke();
+          .drawRect(topLeft.x0, topLeft.y0, cup.width*worldSpecs.voxel_width, cup.height*worldSpecs.voxel_height).endStroke();
       const iTopLeft = voxelToPixels(cup.x + cup.thickness, cup.y + cup.height - 1 - cup.thickness);
       outline.graphics.setStrokeStyle(1).beginStroke('#000000')
-        .drawRect(iTopLeft.x0, iTopLeft.y0, (cup.width-2*cup.thickness)*worldSpecs.voxel_width, (cup.height-2*cup.thickness)*worldSpecs.voxel_height).endStroke();
+          .drawRect(iTopLeft.x0, iTopLeft.y0, (cup.width-2*cup.thickness)*worldSpecs.voxel_width, (cup.height-2*cup.thickness)*worldSpecs.voxel_height).endStroke();
       outline.cache(topLeft.x0 - 1, topLeft.y0 - 1, cup.width * worldSpecs.voxel_width + 2, cup.height * worldSpecs.voxel_height + 2);
       container.addChild(outline);
     }
@@ -490,11 +491,11 @@ class Simulation {
       const shape = new createjs.Shape();
       const box = voxelToPixels(thermometer.x, thermometer.y);
       shape.graphics.setStrokeStyle(2).beginStroke(thermometer.color)
-        .beginFill("white")
-        .drawRoundRect(-box.width/4, -box.height/4, box.width/2, 50, 4)
-        .endFill().endStroke();
+          .beginFill("white")
+          .drawRoundRect(-box.width/4, -box.height/4, box.width/2, 50, 4)
+          .endFill().endStroke();
       shape.graphics.setStrokeStyle(2).beginStroke(thermometer.color)
-        .beginFill("white").drawCircle(0, 0, box.width/2).endFill().endStroke();
+          .beginFill("white").drawCircle(0, 0, box.width/2).endFill().endStroke();
       shape.x = box.x0 + box.width/2;
       shape.y = box.y0 + box.height/2;
       shape.cache(-box.width/2 - 2, -box.height/2 - 2, box.width + 4, 56);
