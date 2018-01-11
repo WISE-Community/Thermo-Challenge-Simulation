@@ -10,7 +10,7 @@ function init() {
 }
 
 function renderChart(categories, series, lowerRangePoint, upperRangePoint) {
-  let title = 'Total change in temperature (Celsius) from ' + lowerRangePoint + ' min to ' + upperRangePoint + ' min';
+  let title = 'Total change in temperature (Celsius) from ' + lowerRangePoint + ' min to ' + upperRangePoint.toFixed(0) + ' min';
   let alternateGridColor = null;
   if (categories.length > 1) {
     alternateGridColor = '#F7F7F7';
@@ -105,10 +105,10 @@ function generateChartData(trials, x) {
       let trialId = trial.id;
       let material = getMaterialFromTrialId(trialId);
       let bevTemp = getBevTempFromTrialId(trialId);
-      let range = getRangeClosestToMouseOverPoint(trial.series[0].data, x);
-      let lowerRangePointObject = range[0];
-      let upperRangePointObject = range[1];
-      let changeInTemperature = upperRangePointObject.y - lowerRangePointObject.y;
+
+      let temperatureAtZero = getTemperatureAtX(trial.series[0].data, 0);
+      let temperatureAtX = getTemperatureAtX(trial.series[0].data, x);
+      let changeInTemperature = temperatureAtX - temperatureAtZero;
       let color = trial.series[0].color;
 
       addCategory(categories, bevTemp);
@@ -117,13 +117,12 @@ function generateChartData(trials, x) {
       setSeriesValue(singleSeries, bevTemp, changeInTemperature);
       setSeriesColor(singleSeries, color);
 
-      lowerRangePoint = lowerRangePointObject.x;
-      upperRangePoint = upperRangePointObject.x;
+      lowerRangePoint = 0;
+      upperRangePoint = x;
     }
   }
 
   filterTemperatures(categories, series);
-
 
   return {
     categories: categories,
@@ -133,6 +132,59 @@ function generateChartData(trials, x) {
   }
 }
 
+/**
+ * Get the y value at x.
+ * @param data An array of data point objects.
+ * @param x Get the temperature at this x.
+ * @return Get the y value at the given x. If x is inbetween two points, we will
+ * extrapolate the data to find the y value between the two neighboring points.
+ */
+function getTemperatureAtX(data, x) {
+  for (let p = 0; p < data.length; p++) {
+    let tempCurrentPoint = data[p];
+    let tempNextPoint = data[p + 1];
+
+    if (tempNextPoint == null) {
+      // we are on the last point so we will just use its y value
+      return tempCurrentPoint.y;
+    } else {
+      if (tempCurrentPoint.x == x) {
+        // we have a point with the exact x value so we can get its y value
+        return tempCurrentPoint.y;
+      } else if (tempCurrentPoint.x < x && x < tempNextPoint.x) {
+        /*
+         * The x is inbetween two of our points so we will need to extrapolate
+         * the data to calculate the y value.
+         */
+        return getTemperatureAtXBetweenPoints(tempCurrentPoint, tempNextPoint, x);
+      }
+    }
+  }
+}
+
+/**
+ * Get the y value at x between the two given points.
+ * @param previousPoint The neighboring point directly to the left.
+ * @param nextPoint The neighboring point directly to the right.
+ * @param x Get the y value at this x.
+ * @return The y value calculated by extrapolating a straight line between the
+ * two neighboring points.
+ */
+function getTemperatureAtXBetweenPoints(previousPoint, nextPoint, x) {
+  let x1 = previousPoint.x;
+  let x2 = nextPoint.x;
+  let y1 = previousPoint.y;
+  let y2 = nextPoint.y;
+
+  // calculate the slope of the line between the two neighboring points
+  let m = (y2 - y1) / (x2 - x1);
+
+  // calculate the y intercept of the line between the two neighboring points
+  let b = y1 - (m * x1);
+
+  // calculate the y value using the line equation y = (m * x) + b
+  return (m * x) + b;
+}
 
 function filterTemperatures(categories, series) {
   let hasHot = false;
