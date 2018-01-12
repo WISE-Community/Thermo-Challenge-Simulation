@@ -10,7 +10,7 @@ function init() {
 }
 
 function renderChart(categories, series, lowerRangePoint, upperRangePoint) {
-  let title = 'Total change in temperature (Celsius) from ' + lowerRangePoint + ' min to ' + upperRangePoint.toFixed(0) + ' min';
+  let title = 'Total change in temperature from ' + lowerRangePoint + ' to ' + upperRangePoint.toFixed(0) + ' minutes';
   let alternateGridColor = null;
   if (categories.length > 1) {
     alternateGridColor = '#F7F7F7';
@@ -26,11 +26,18 @@ function renderChart(categories, series, lowerRangePoint, upperRangePoint) {
           }
       },
       title: {
-          text: title
+          text: title,
+          style: { "fontSize": "15px" }
       },
       xAxis: {
           categories: categories,
-          alternateGridColor: alternateGridColor
+          alternateGridColor: alternateGridColor,
+          labels: {
+              style: {
+                  fontSize: '12px',
+                  color: '#333333'
+              }
+          }
       },
       yAxis: {
           min: -60,
@@ -111,7 +118,7 @@ function generateChartData(trials, x) {
       let changeInTemperature = temperatureAtX - temperatureAtZero;
       let color = trial.series[0].color;
 
-      addCategory(categories, bevTemp);
+      addCategory(categories, `${bevTemp} Liquid`);
       addSeries(series, material);
       let singleSeries = getSeriesByName(series, material);
       setSeriesValue(singleSeries, bevTemp, changeInTemperature);
