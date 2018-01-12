@@ -99,15 +99,15 @@ td {
 }
 
 .aluminum {
-  color: #000000;
+  color: #777777;
 }
 
 .wood {
-  color: #774400;
+  color: #d32f2f;
 }
 
 .styrofoam {
-  color: #777777;
+  color: #f57f17;
 }
 
 .clay {
@@ -119,5 +119,5 @@ td {
 }
 
 .plastic {
-  color: #DD1188;
+  color: #8e24aa;
 }

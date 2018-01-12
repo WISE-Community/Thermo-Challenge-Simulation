@@ -53,15 +53,15 @@ const worldObjects = {
   materials: {
     "Aluminum": {
       conductivity: 130,
-      color: "#000000"
+      color: "#777777"
     },
     "Wood": {
       conductivity: 6,
-      color: "#774400"
+      color: "#d32f2f"
     },
     "Styrofoam": {
       conductivity: 1.2,
-      color: "#777777"
+      color: "#f57f17"
     },
     "Clay": {
       conductivity: 12,
@@ -73,7 +73,7 @@ const worldObjects = {
     },
     "Plastic": {
       conductivity: 15,
-      color: "#DD1188"
+      color: "#8e24aa"
     }
   }
 };
