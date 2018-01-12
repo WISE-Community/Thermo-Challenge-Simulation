@@ -27,7 +27,7 @@ td {
 }
 
 .cell--head--row {
-  width: 80px;
+  width: 100px;
 }
 
 .unexplored {
@@ -35,7 +35,7 @@ td {
   background-size: 40px;
   background-repeat: no-repeat;
   background-position: center center;
-  transition: 250ms all;
+  /*transition: 250ms all;*/
 }
 
 .choice {
@@ -75,7 +75,6 @@ td {
 }
 
 .completed.flagged {
-  background-color: #ffffff;
   background-size: 40px, 20px;
   background-repeat: no-repeat;
   background-image: url("images/ic_done_00C853_24px.svg"), url("images/yellow_star.png");
