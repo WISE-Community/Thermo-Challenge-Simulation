@@ -7,6 +7,7 @@ var series = [];
 
 function init() {
   //renderChart(categories, series);
+  handleConnectedComponentStudentDataChanged();
 }
 
 function renderChart(categories, series, lowerRangePoint, upperRangePoint) {
