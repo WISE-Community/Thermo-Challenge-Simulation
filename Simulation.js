@@ -16,7 +16,6 @@ class Simulation {
     this.thermometers;
     this.currentHeatShape;
     this.thermometerLegendStage;
-    this.ticksPlayed = [];
     if (isCompleted == null) {
       this.isCompleted = false;
     } else {
@@ -93,23 +92,25 @@ class Simulation {
   }
 
   showTrialAtTick(tick) {
-    this.currentHeatShape.graphics.clear();
     let worldData = this.allWorldData[tick];
-    for (const voxel of worldData.voxels) {
-      const hsl = tempToHSL(voxel.temperature);
-      const heat_color = "hsla(" + hsl.h + ", " + hsl.s + ", " + hsl.l + ", 1.0)";
-      const stroke_color = "hsla(" + hsl.h + ", 50%, " + hsl.l + ", 1.0)";
-      const rectXInitial = worldSpecs.width_px/2 + worldSpecs.voxel_width*voxel.x - worldSpecs.voxel_width/2;
-      const rectYInitial = worldSpecs.height_px/2 - worldSpecs.voxel_height*voxel.y - worldSpecs.voxel_height/2;
-      this.currentHeatShape.graphics
+    if (tick % 2 === 0) {
+      // only draw every other frame to render smoothly even on slower devices
+      this.currentHeatShape.graphics.clear();
+      for (const voxel of worldData.voxels) {
+        const hsl = tempToHSL(voxel.temperature);
+        const heat_color = "hsla(" + hsl.h + ", " + hsl.s + ", " + hsl.l + ", 1.0)";
+        const stroke_color = "hsla(" + hsl.h + ", 50%, " + hsl.l + ", 1.0)";
+        const rectXInitial = worldSpecs.width_px / 2 + worldSpecs.voxel_width * voxel.x - worldSpecs.voxel_width / 2;
+        const rectYInitial = worldSpecs.height_px / 2 - worldSpecs.voxel_height * voxel.y - worldSpecs.voxel_height / 2;
+        this.currentHeatShape.graphics
           .beginStroke(stroke_color).beginFill(heat_color)
           .drawRect(rectXInitial, rectYInitial, worldSpecs.voxel_width, worldSpecs.voxel_height)
           .endFill().endStroke();
+      }
+      this.showThermometerReadings(worldData);
+      this.currentStage.update();
     }
 
-    this.showThermometerReadings(worldData);
-    this.currentStage.update();
-    this.ticksPlayed.push(tick);
     if (tick >= 870) {
       this.isCompleted = true;
     }
