@@ -119,7 +119,8 @@ function generateChartData(trials, x) {
       let changeInTemperature = temperatureAtX - temperatureAtZero;
       let color = trial.series[0].color;
 
-      addCategory(categories, `${bevTemp} Liquid`);
+      //addCategory(categories, `${bevTemp} Liquid`);
+      addCategory(categories, bevTemp);
       addSeries(series, material);
       let singleSeries = getSeriesByName(series, material);
       setSeriesValue(singleSeries, bevTemp, changeInTemperature);
