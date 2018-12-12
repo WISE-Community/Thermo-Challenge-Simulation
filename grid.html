@@ -5,6 +5,7 @@
     <script src="jquery-1.11.1.min.js"></script>
     <script src="grid.js"></script>
     <script src="util.js"></script>
+    <script src="autoScore.js"></script>
     <style>
       body {
         font-family: Arial, Helvetica Neue, Helvetica, sans-serif;
@@ -127,6 +128,39 @@
       .plastic {
         color: #8e24aa;
       }
+
+      #feedbackButton {
+        margin-top: 20px;
+        border: 0;
+        line-height: 2.5;
+        padding: 0 20px;
+        font-size: 1rem;
+        text-align: center;
+        color: #fff;
+        text-shadow: 1px 1px 1px #000;
+        border-radius: 10px;
+        background-color: rgba(220, 0, 0, 1);
+        background-image: linear-gradient(to top left,
+        rgba(0, 0, 0, .2),
+        rgba(0, 0, 0, .2) 30%,
+        rgba(0, 0, 0, 0));
+        box-shadow: inset 2px 2px 3px rgba(255, 255, 255, .6),
+        inset -2px -2px 3px rgba(0, 0, 0, .6);
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        width: 25%;
+      }
+
+      #feedbackButton:hover {
+        background-color: rgba(255, 0, 0, 1);
+        cursor:pointer;
+      }
+
+      #feedbackButton:active {
+        box-shadow: inset -2px -2px 3px rgba(255, 255, 255, .6),
+        inset 2px 2px 3px rgba(0, 0, 0, .6);
+      }
     </style>
   </head>
   <body onload="init()">
@@ -140,7 +174,7 @@
         <th class="cell--head glass">Glass</th>
         <th class="cell--head plastic">Plastic</th>
       </tr>
-      <tr>
+      <tr class="Temp Hot">
         <td class="cell--head cell--head--row">Hot Liquid</td>
         <td class="choice" tabindex="0" role="button"
           aria-label="Select Aluminum Hot" bevTemp="Hot" airTemp="Warm"
@@ -161,7 +195,7 @@
           aria-label="Select Plastic Hot" bevTemp="Hot" airTemp="Warm"
           material="Plastic"></td>
       </tr>
-      <tr>
+      <tr class="Temp Warm">
         <td class="cell--head cell--head--row">Warm Liquid</td>
         <td class="choice" tabindex="0" role="button"
           aria-label="Select Aluminum Warm" bevTemp="Warm" airTemp="Warm"
@@ -182,7 +216,7 @@
           aria-label="Select Plastic Warm" bevTemp="Warm" airTemp="Warm"
           material="Plastic"></td>
       </tr>
-      <tr>
+      <tr class="Temp Cold">
         <td class="cell--head cell--head--row">Cold Liquid</td>
         <td class="choice" tabindex="0" role="button"
           aria-label="Select Aluminum Cold" bevTemp="Cold" airTemp="Warm"
@@ -204,5 +238,6 @@
           material="Plastic"></td>
       </tr>
     </table>
+    <input id="feedbackButton" type="button" value="Get Feedback" style="display:none" />
   </body>
 </html>

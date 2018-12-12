@@ -18,39 +18,51 @@ function isHideCanvas() {
 
 function isShowCanvas() {
   const showCanvas = getURLParameters("showCanvas");
-  return showCanvas == undefined || showCanvas == 'true';
+  return showCanvas == undefined || showCanvas === 'true';
 }
 
 function isControlHidden(controlName) {
   const control = getURLParameters(controlName);
-  return control == 'isHidden';
+  return control === 'isHidden';
 }
 
 function isControlDisplayedAndNotEditable(controlName) {
   const control = getURLParameters(controlName);
-  return control == 'isDisplayedAndNotEditable';
+  return control === 'isDisplayedAndNotEditable';
 }
 
 function isControlDisplayedAndEditable(controlName) {
   const control = getURLParameters(controlName);
-  return control == undefined || control == 'isDisplayedAndEditable';
+  return control == undefined || control === 'isDisplayedAndEditable';
 }
 
 function isShowSelectTrialGrid() {
   const selectTrialMode = getURLParameters("selectTrialMode");
-  return selectTrialMode == 'grid';
+  return selectTrialMode === 'grid';
 }
 
 function isCollectMode() {
-  return getURLParameters("mode") == 'collect';
+  return getURLParameters("mode") === 'collect';
 }
 
 function isFlagMode() {
-  return getURLParameters("mode") == 'flag';
+  return getURLParameters("mode") === 'flag';
 }
 
 function isInterpretMode() {
-  return getURLParameters("mode") == 'interpret';
+  return getURLParameters("mode") === 'interpret';
+}
+
+function isAutoScoreMaterialMode() {
+  return getURLParameters("autoScore") === 'material';
+}
+
+function isAutoScoreTemperatureMode() {
+  return getURLParameters("autoScore") === 'temperature';
+}
+
+function getMaxNumAutoScoreAttempts() {
+  return getURLParameters("maxNumAutoScoreAttempts")
 }
 
 function getStartingMaterial() {
@@ -63,4 +75,13 @@ function getStartingBevTemp() {
 
 function getStartingAirTemp() {
   return getURLParameters("airTemp");
+}
+
+function getAllAvailableTemps() {
+  const tempsParam = getURLParameters("temps");
+  if (tempsParam == null) {
+    return ["Hot","Warm","Cold"];
+  } else {
+    return tempsParam.split(",");
+  }
 }

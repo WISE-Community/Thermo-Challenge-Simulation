@@ -7,14 +7,27 @@ function init() {
     grids = new CollectionGrids();
   } else if (isFlagMode()) {
     grids = new FlagGrids();
+    if (isAutoScoreMaterialMode() || isAutoScoreTemperatureMode()) {
+      initFeedbackButton()
+    }
   } else if (isInterpretMode()) {
     grids = new InterpretGrids();
   } else {
     alert("Error: unrecognized mode. Exiting.");
     return;
   }
+  showOnlyAvailableTemps();
   initCellClickedHandlers();
   sendGetParametersMessage();
+}
+
+function showOnlyAvailableTemps() {
+  const allAvailableTemps = getAllAvailableTemps();
+  ["Hot","Warm","Cold"].map((temp) => {
+    if (!allAvailableTemps.includes(temp)) {
+      $(`.Temp.${temp}`).hide();
+    }
+  });
 }
 
 function initCellClickedHandlers() {
@@ -283,6 +296,13 @@ class InterpretGrids extends Grids {
       this.saveToWISE();
     }
   }
+}
+
+function initFeedbackButton() {
+  $("#feedbackButton").show();
+  $("#feedbackButton").click(() => {
+    giveGuidance();
+  });
 }
 
 function sendGetParametersMessage() {
