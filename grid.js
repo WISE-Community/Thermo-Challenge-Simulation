@@ -9,6 +9,9 @@ function init() {
     grids = new FlagGrids();
   } else if (isInterpretMode()) {
     grids = new InterpretGrids();
+  } else {
+    alert("Error: unrecognized mode. Exiting.");
+    return;
   }
   initCellClickedHandlers();
   sendGetParametersMessage();
