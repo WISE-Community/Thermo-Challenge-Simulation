@@ -8,7 +8,8 @@ function init() {
   } else if (isFlagMode()) {
     grids = new FlagGrids();
     if (isAutoScoreMaterialMode() || isAutoScoreTemperatureMode()) {
-      initFeedbackButton()
+      initFeedbackButton();
+      displayAutoScoreMode();
     }
   } else if (isInterpretMode()) {
     grids = new InterpretGrids();
@@ -188,6 +189,9 @@ class Grids {
     this.saveToWISE();
   }
 
+  // studentdatachanged on cell clicked
+  // studentwork on submit to get feedback
+
   saveToWISE() {
     const componentState = {
       messageType: 'studentDataChanged',
@@ -198,7 +202,8 @@ class Grids {
         completedCells: this.completedCells,
         flaggedCells: this.flaggedCells,
         selectedCells: this.selectedCells
-      }
+      },
+      annotations: [{}]
     };
     try {
       sendMessageToParent(componentState);
@@ -303,6 +308,10 @@ function initFeedbackButton() {
   $("#feedbackButton").click(() => {
     giveGuidance();
   });
+}
+
+function displayAutoScoreMode() {
+  $("#autoScoreGuidanceHeading").append(` (${getAutoScoreMode()})`);
 }
 
 function sendGetParametersMessage() {
