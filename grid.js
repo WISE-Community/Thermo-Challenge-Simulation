@@ -248,7 +248,160 @@ class Grids extends WISEAPI {
     $("#log").append("<br/>");
   }
 
+  threePartFeedback(summary, questions, budgetCheck) {
+    const feedback = `<b>What your plan indicates:</b> ${summary}<br/>
+        <b>Questions to help improve your plan:</b> ${questions}<br/>
+        <b>Budget check:</b> ${budgetCheck}<br/><br/>`;
+    this.saveFeedbackToWISE(feedback);
+    $("#log").append(feedback);
+
+  }
+
+  showFeedbackCase(feedbackCase) {
+    this.appendLog(`[Case ${feedbackCase}]`);
+    this.appendLog(`<br/>`);
+  }
+
+  appendLog(message) {
+    $("#log").append(message);
+  }
+
   giveFeedback() {
+    const aggregate = this.getFlaggedCellsAggregate();
+    if (this.noCellSelected(aggregate)) {
+      this.feedback("[Condition NoneSelected] Please choose experiment(s) that you want to run.");
+      return;
+    }
+
+    if (this.onlyHot(aggregate) || this.onlyCold(aggregate)) {
+      this.giveFeedbackOnlyHotOrOnlyCold(aggregate);
+    } else if (this.noPairs(aggregate) || this.onlyPairs(aggregate)) {
+      this.giveFeedbackNoPairsOrOnlyPairs(aggregate);
+    } else if (this.numPairs(aggregate) === (this.numHotOnly(aggregate) + this.numColdOnly(aggregate))) {
+      this.showFeedbackCase(`2D`);
+      this.getFeedbackNumPairsEqualsSingles(aggregate);
+    } else if (this.numPairs(aggregate) !== (this.numHotOnly(aggregate) + this.numColdOnly(aggregate))) {
+      this.showFeedbackCase(`2E`);
+      this.getFeedbackNumPairsNotEqualsSingles(aggregate);
+    }
+  }
+
+  giveFeedbackOnlyHotOrOnlyCold(aggregate) {
+    const allMaterialsFlagged = this.getAllMaterialsFlagged(aggregate);
+    const moreSelectedTemp = this.onlyHot(aggregate) ? 'hot' : 'cold';
+    const summary = `You want to investigate materials for a ${moreSelectedTemp} beverage. (Your plan includes only ${moreSelectedTemp} tests.) 
+        You want to compare ${allMaterialsFlagged.length} material(s): ${allMaterialsFlagged.join(", ")}.`;
+    let questions = `Does running only ${moreSelectedTemp} tests give you the evidence you need to decide on the best material?`;
+    const numMaterials = this.getNumMaterials(aggregate);
+    if (numMaterials <= 2) {
+      this.showFeedbackCase(`1A`);
+      questions = `Based on what you know about the six materials, are there any additional 
+            tests it would be helpful to add? ${questions}`;
+    } else if (numMaterials <= 4) {
+      this.showFeedbackCase(`1B`);
+      questions = `Based on what you know about the six materials, are there any tests you should
+            add or eliminate from your plan? ${questions}`;
+    } else {
+      this.showFeedbackCase(`1C`);
+      questions = `Based on what you know about the six materials, are there any tests you can 
+            eliminate from your plan? ${questions}`;
+    }
+    const budgetCheck = this.getFeedbackBudgeCheck(aggregate);
+    this.threePartFeedback(summary, questions, budgetCheck);
+  }
+
+  giveFeedbackNoPairsOrOnlyPairs(aggregate) {
+    const summary = this.getSummaryForNoPairsOrOnlyPairs(aggregate);
+    const numMaterials = this.getNumMaterials(aggregate);
+    const questions = this.getQuestionsForPairsOrNoPairs(numMaterials);
+    const budgetCheck = this.getFeedbackBudgeCheck(aggregate);
+    this.threePartFeedback(summary, questions, budgetCheck);
+  }
+
+  getFeedbackNumPairsEqualsSingles(aggregate) {
+    const allMaterialsFlagged = this.getAllMaterialsFlagged(aggregate);
+    let summary;
+    let questions;
+    if (this.numColdOnly(aggregate) === this.numHotOnly(aggregate)) {
+      summary = `You are undecided between or want to investigate both temperature beverages.
+          (Your plan includes an equal number of hot and cold tests.)
+          You want to compare ${allMaterialsFlagged.length} material(s): ${allMaterialsFlagged.join(", ")}.`;
+      questions = `Does running a combination of cold and hot tests help you to compare and decide on the best material?`;
+    } else {
+      const moreSelectedTemp = this.numColdOnly(aggregate) > this.numHotOnly(aggregate) ? 'cold' : 'hot';
+      summary = `You want to investigate materials for a ${moreSelectedTemp} beverage. (Your plan includes more ${moreSelectedTemp} tests.) 
+        You want to compare ${allMaterialsFlagged.length} material(s): ${allMaterialsFlagged.join(", ")}.`;
+      questions = `Does running more ${moreSelectedTemp} tests give the evidence you need to decide on the best material?`;
+    }
+    const numMaterials = this.getNumMaterials(aggregate);
+    if (numMaterials <= 2) {
+      questions = `${questions} Based on what you know about the six materials, are there any additional 
+            tests it would be helpful to add?`;
+    } else if (numMaterials <= 4) {
+      questions = `${questions} Based on what you know about the six materials, are there any tests you should
+            add or eliminate from your plan?`;
+    } else {
+      questions = `${questions} Based on what you know about the six materials, are there any tests you can 
+            eliminate from your plan?`;
+    }
+    const budgetCheck = this.getFeedbackBudgeCheck(aggregate);
+    this.threePartFeedback(summary, questions, budgetCheck);
+  }
+
+  getFeedbackNumPairsNotEqualsSingles(aggregate) {
+    this.getFeedbackNumPairsEqualsSingles(aggregate);
+  }
+
+  getSummaryForNoPairsOrOnlyPairs(aggregate) {
+    const allMaterialsFlagged = this.getAllMaterialsFlagged(aggregate);
+    let summary;
+    if (this.noPairs(aggregate)) {
+      if (this.numColdOnly(aggregate) === this.numHotOnly(aggregate)) {
+        this.showFeedbackCase(`2A`);
+        summary = `You are undecided between or want to investigate both temperature beverages. (Your plan includes an equal number of both hot and cold tests.) 
+          You want to compare ${allMaterialsFlagged.length} material(s): ${allMaterialsFlagged.join(", ")}.`;
+      } else {
+        this.showFeedbackCase(`2B`);
+        const moreSelectedTemp = this.numColdOnly(aggregate) > this.numHotOnly(aggregate) ? 'cold' : 'hot';
+        const lessSelectedTemp = this.numColdOnly(aggregate) < this.numHotOnly(aggregate) ? 'cold' : 'hot';
+        summary = `You want to investigate materials for a ${moreSelectedTemp} beverage. (Your plan includes more ${moreSelectedTemp} tests than ${lessSelectedTemp} tests.)
+          You want to compare ${allMaterialsFlagged.length} material(s): ${allMaterialsFlagged.join(", ")}.`;
+      }
+    } else if (this.onlyPairs(aggregate)) {
+      this.showFeedbackCase(`2C`);
+      summary = `You are undecided between or want to investigate both temperature beverages. (Your plan includes an equal number of both hot and cold tests.)
+        You want to compare ${allMaterialsFlagged.length} material(s): ${allMaterialsFlagged.join(", ")}.`;
+    }
+    return summary;
+  }
+
+  getQuestionsForPairsOrNoPairs(numMaterials) {
+    let questions = `Does running a combination of cold and hot tests help you to compare and decide on the best material?`;
+    if (numMaterials <= 2) {
+      questions = `${questions} Based on what you know about the six materials, are there any additional 
+            tests it would be helpful to add? `;
+    } else if (numMaterials <= 4) {
+      questions = `${questions} Based on what you know about the six materials, are there any tests you should
+            add or eliminate from your plan?`;
+    } else {
+      questions = `${questions} Based on what you know about the six materials, are there any tests you can 
+            eliminate from your plan?`;
+    }
+    return questions;
+  }
+
+  getFeedbackBudgeCheck() {
+    const numTests = this.numTests();
+    return `Your plan uses ${numTests} out of the 12 possible tests (${Math.round(numTests / 12 * 100)}% of your budget). 
+          Remember, your goal is to gather enough evidence to recommend a material using as little of your budget
+          as you can.`
+  }
+
+  giveFeedbackMixedHotAndCold(aggregate) {
+
+  }
+
+  giveFeedback_old() {
     const aggregate = this.getFlaggedCellsAggregate();
     if (this.noCellSelected(aggregate)) {
       this.feedback("[Condition NoneSelected] Please choose experiment(s) that you want to run.");
@@ -263,9 +416,9 @@ class Grids extends WISEAPI {
     if (isAutoScoreTemperatureMode()) {
       if (this.allHot(aggregate)) {
         this.feedback("Guidance: all hot");
-      } else if (allCold(aggregate)) {
+      } else if (this.allCold(aggregate)) {
         this.feedback("Guidance: all cold");
-      } else if (this.onlyHotAndCold(aggregate)) {
+      } else if (this.onlyPairs(aggregate)) {
         this.feedback("Guidance: only hot & cold");
       } else if (this.hotOnlyEqualsColdOnly(aggregate)) {
         this.feedback("Guidance: hot only = cold only");
@@ -282,13 +435,13 @@ class Grids extends WISEAPI {
           To improve your experiment plan, consider: 
           Will testing just one temperature for a material help you decide 
           how the material compares against other materials for insulating a beverage? `);
-      } else if (this.onlyHotAndCold(aggregate) && this.numPairs(aggregate) === 1) {
+      } else if (this.onlyPairs(aggregate) && this.numPairs(aggregate) === 1) {
         this.feedback(`[Condition OnePair] It looks like you’re interested in investigating ${allMaterialsFlagged.length} material(s): ${allMaterialsFlagged.join(", ")}.
           Your plan includes both hot and cold tests for these materials.<br/>
           To improve your experiment plan, consider: 
           Are there any other materials you would like to compare to ${allMaterialsFlagged.join(", ")}? 
           What test(s) should you add to your plan to investigate these other materials?`);
-      } else if (this.onlyHotAndCold(aggregate) && this.numPairs(aggregate) >= 2 && this.numPairs(aggregate) <= 5) {
+      } else if (this.onlyPairs(aggregate) && this.numPairs(aggregate) >= 2 && this.numPairs(aggregate) <= 5) {
         this.feedback(`[Condition 2-5Pairs] It looks like you’re interested in investigating ${allMaterialsFlagged.length} material(s): ${allMaterialsFlagged.join(", ")}.
           Your plan includes both hot and cold tests for these materials.<br/>
           To improve your experiment plan, consider: 
@@ -335,54 +488,86 @@ class Grids extends WISEAPI {
   }
 
   noCellSelected(aggregate) {
-    return aggregate.hotOnly.length === 0 &&
-      aggregate.coldOnly.length === 0 &&
-      aggregate.hotAndCold.length === 0;
+    return this.numHotOnly(aggregate) === 0 &&
+        this.numColdOnly(aggregate) === 0 &&
+        this.numPairs(aggregate) === 0;
   }
 
   allCellsSelected(aggregate) {
-    return aggregate.hotAndCold.length === materials.length;
+    return this.numPairs(aggregate) === materials.length;
   }
 
   noPairs(aggregate) {
-    return aggregate.hotAndCold.length === 0 &&
-      (aggregate.hotOnly.length > 0 || aggregate.coldOnly.length > 0);
+    return this.numPairs(aggregate) === 0 &&
+        (this.numHotOnly(aggregate) > 0 || this.numColdOnly(aggregate) > 0);
   }
 
   getAllMaterialsFlagged(aggregate) {
     return aggregate.hotAndCold.concat(aggregate.hotOnly).concat(aggregate.coldOnly);
   }
 
+  getNumMaterials(aggregate) {
+    let numMaterials = 0;
+    for (let material of materials) {
+      if (this.getFlaggedCellsByMaterial(material).length > 0) {
+        numMaterials++;
+      }
+    }
+    return numMaterials;
+  }
+
+  allHot(aggregate) {
+    return this.numPairs(aggregate) + this.numHotOnly(aggregate) === materials.length;
+  }
+
+  allCold(aggregate) {
+    return this.numPairs(aggregate) + this.numColdOnly(aggregate) === materials.length;
+  }
+
+  onlyCold(aggregate) {
+    return this.numColdOnly(aggregate)> 0 &&
+        this.numHotOnly(aggregate) === 0 && this.numPairs(aggregate) === 0;
+  }
+
+  onlyHot(aggregate) {
+    return this.numHotOnly(aggregate) > 0 &&
+        this.numColdOnly(aggregate) === 0 && this.numPairs(aggregate) === 0;
+  }
+
+  onlyPairs(aggregate) {
+    return this.numPairs(aggregate) > 0 &&
+        this.numHotOnly(aggregate) === 0 && this.numColdOnly(aggregate)=== 0;
+  }
+
+  hotOnlyEqualsColdOnly(aggregate) {
+    return this.numPairs(aggregate) > 0 &&
+        this.numHotOnly(aggregate) === this.numColdOnly();
+  }
+
+  hotOnlyMoreThanColdOnly(aggregate) {
+    return this.numHotOnly(aggregate) > 0 &&
+        this.numHotOnly(aggregate) > this.numColdOnly();
+  }
+
+  hotOnlyLessThanColdOnly(aggregate) {
+    return this.numColdOnly(aggregate)> 0 &&
+        this.numHotOnly(aggregate) < this.numColdOnly();
+  }
+
   numPairs(aggregate) {
     return aggregate.hotAndCold.length;
   }
 
-  allHot(aggregate) {
-    return aggregate.hotAndCold.length + aggregate.hotOnly.length === materials.length;
+  numColdOnly(aggregate) {
+    return aggregate.coldOnly.length;
   }
 
-  allCold(aggregate) {
-    return aggregate.hotAndCold.length + aggregate.coldOnly.length === materials.length;
+  numHotOnly(aggregate) {
+    return aggregate.hotOnly.length;
   }
 
-  onlyHotAndCold(aggregate) {
-    return aggregate.hotAndCold.length > 0 &&
-      aggregate.hotOnly.length === 0 && aggregate.coldOnly.length === 0;
-  }
-
-  hotOnlyEqualsColdOnly(aggregate) {
-    return aggregate.hotOnly.length > 0 &&
-      aggregate.hotOnly.length === aggregate.coldOnly.length;
-  }
-
-  hotOnlyMoreThanColdOnly(aggregate) {
-    return aggregate.hotOnly.length > 0 &&
-      aggregate.hotOnly.length > aggregate.coldOnly.length;
-  }
-
-  hotOnlyLessThanColdOnly(aggregate) {
-    return aggregate.coldOnly.length > 0 &&
-      aggregate.hotOnly.length < aggregate.coldOnly.length;
+  numTests() {
+    return this.flaggedCells.length;
   }
 
   getFlaggedCellsByMaterial(material) {
@@ -408,10 +593,10 @@ class Grids extends WISEAPI {
   }
 
   appendStateToLog(aggregate) {
-    $("#log").append(`Number of tests: ${aggregate.hotAndCold.length * 2 + aggregate.hotOnly.length + aggregate.coldOnly.length} / 12`);
-    $("#log").append(`Hot and Cold (${aggregate.hotAndCold.length}): [${aggregate.hotAndCold.join(",")}]`);
-    $("#log").append(`Hot only (${aggregate.hotOnly.length}): [${aggregate.hotOnly.join(",")}]`);
-    $("#log").append(`Cold only (${aggregate.coldOnly.length}): [${aggregate.coldOnly.join(",")}]`);
+    $("#log").append(`Number of tests: ${this.numPairs(aggregate) * 2 + this.numHotOnly(aggregate) + this.numColdOnly(aggregate)} / 12`);
+    $("#log").append(`Hot and Cold (${this.numPairs(aggregate)}): [${aggregate.hotAndCold.join(",")}]`);
+    $("#log").append(`Hot only (${this.numHotOnly(aggregate)}): [${aggregate.hotOnly.join(",")}]`);
+    $("#log").append(`Cold only (${this.numColdOnly(aggregate)}): [${aggregate.coldOnly.join(",")}]`);
   }
 }
 
