@@ -293,18 +293,22 @@ class Grids extends WISEAPI {
         You want to compare ${allMaterialsFlagged.length} material(s): ${allMaterialsFlagged.join(", ")}.`;
     let questions = `Does running only ${moreSelectedTemp} tests give you the evidence you need to decide on the best material?`;
     const numMaterials = this.getNumMaterials(aggregate);
-    if (numMaterials <= 2) {
+    if (numMaterials === 1) {
       this.showFeedbackCase(`1A`);
-      questions = `Based on what you know about the six materials, are there any additional 
-            tests it would be helpful to add? ${questions}`;
+      questions = `Does running only one test with one material and one temperature give you enough evidence to compare and decide on the best material? 
+            Based on what you know about the six materials, are there any additional tests it would be helpful to add?`;
+    } else if (numMaterials <= 2) {
+      this.showFeedbackCase(`1A`);
+      questions = `${questions} Based on what you know about the six materials, are there any additional 
+            tests it would be helpful to add? `;
     } else if (numMaterials <= 4) {
       this.showFeedbackCase(`1B`);
-      questions = `Based on what you know about the six materials, are there any tests you should
-            add or eliminate from your plan? ${questions}`;
+      questions = `${questions} Based on what you know about the six materials, are there any tests you should
+            add or eliminate from your plan? `;
     } else {
       this.showFeedbackCase(`1C`);
-      questions = `Based on what you know about the six materials, are there any tests you can 
-            eliminate from your plan? ${questions}`;
+      questions = `${questions} Based on what you know about the six materials, are there any tests you can 
+            eliminate from your plan? `;
     }
     const budgetCheck = this.getFeedbackBudgeCheck(aggregate);
     this.threePartFeedback(summary, questions, budgetCheck);
@@ -325,7 +329,7 @@ class Grids extends WISEAPI {
     if (this.numColdOnly(aggregate) === this.numHotOnly(aggregate)) {
       summary = `It seems you are undecided between or want to investigate both temperature beverages because your plan includes an equal number of hot and cold tests. 
           You want to compare ${allMaterialsFlagged.length} material(s): ${allMaterialsFlagged.join(", ")}.`;
-      questions = `Does running a combination of cold and hot tests help you to compare and decide on the best material?`;
+      questions = `Does running a combination of cold and hot tests help you to decide on the best material?`;
     } else {
       const moreSelectedTemp = this.numColdOnly(aggregate) > this.numHotOnly(aggregate) ? 'cold' : 'hot';
       summary = `It seems you want to investigate materials for a ${moreSelectedTemp} beverage because your plan includes more ${moreSelectedTemp} tests. 
@@ -375,7 +379,7 @@ class Grids extends WISEAPI {
   }
 
   getQuestionsForPairsOrNoPairs(numMaterials) {
-    let questions = `Does running a combination of cold and hot tests help you to compare and decide on the best material?`;
+    let questions = `Does running a combination of cold and hot tests help you to decide on the best material?`;
     if (numMaterials <= 2) {
       questions = `${questions} Based on what you know about the six materials, are there any additional 
             tests it would be helpful to add? `;
