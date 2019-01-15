@@ -3,9 +3,9 @@
     <meta charset="UTF-8">
     <title>Thermodynamics Challenge Explore Data</title>
     <script src="jquery-1.11.1.min.js"></script>
+    <script src="wiseAPI.js"></script>
     <script src="grid.js"></script>
     <script src="util.js"></script>
-    <script src="autoScore.js"></script>
     <style>
       body {
         font-family: Arial, Helvetica Neue, Helvetica, sans-serif;
@@ -238,6 +238,12 @@
           material="Plastic"></td>
       </tr>
     </table>
-    <input id="feedbackButton" type="button" value="Get Feedback" style="display:none" />
+    <div id="autoScoreDiv" style="display:none">
+      <input id="feedbackButton" onclick="grids.giveFeedback()" type="button" value="Get Feedback" />
+      <h2 id="autoScoreGuidanceHeading">Auto-score guidance</h2>
+      <button onclick="grids.clearLog()">Clear guidance</button> (refresh browser to clear everything)
+      <br/><br/>
+      <div id="log"></div>
+    </div>
   </body>
 </html>

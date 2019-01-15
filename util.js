@@ -53,12 +53,16 @@ function isInterpretMode() {
   return getURLParameters("mode") === 'interpret';
 }
 
+function getAutoScoreMode() {
+  return getURLParameters("autoScore");
+}
+
 function isAutoScoreMaterialMode() {
-  return getURLParameters("autoScore") === 'material';
+  return getAutoScoreMode() === 'material';
 }
 
 function isAutoScoreTemperatureMode() {
-  return getURLParameters("autoScore") === 'temperature';
+  return getAutoScoreMode() === 'temperature';
 }
 
 function getMaxNumAutoScoreAttempts() {
