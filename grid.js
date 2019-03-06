@@ -104,7 +104,8 @@ class Grids extends WISEAPI {
     return {
       material: material,
       bevTemp: bevTemp,
-      airTemp: airTemp
+      airTemp: airTemp,
+      dateAdded: Date.now()
     }
   }
 
