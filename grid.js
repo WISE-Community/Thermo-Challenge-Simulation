@@ -19,6 +19,7 @@ function init() {
   showOnlyAvailableTemps();
   initCellClickedHandlers();
   grids.sendGetParametersMessage();
+  grids.sendGetLatestAnnotationsMessage();
 }
 
 function showOnlyAvailableTemps() {
@@ -202,6 +203,14 @@ class Grids extends WISEAPI {
     }
   }
 
+  handleLatestAnnotationsMessage(messageData) {
+    const latestScoreAnnotation = messageData.latestScoreAnnotation;
+    const latestCommentAnnotation = messageData.latestCommentAnnotation;
+    if (getMaxNumAutoScoreAttempts() === 1 && latestCommentAnnotation != null) {
+      this.disableFeedbackButton();
+    }
+  }
+
   handleConnectedComponentStudentDataChangedMessage(messageData) {
     const componentState = messageData.componentState;
     if (componentState.componentType == 'Graph') {
@@ -268,39 +277,56 @@ class Grids extends WISEAPI {
   }
 
   giveFeedback() {
-    const aggregate = this.getFlaggedCellsAggregate();
-    if (this.noCellSelected(aggregate)) {
-      this.feedback("[Condition NoneSelected] Please choose experiment(s) that you want to run.");
-      return;
+    let calculateFeedback = true;
+    if (getMaxNumAutoScoreAttempts() === 1) {
+      calculateFeedback = confirm("You only have one attempt to receive feedback, are you sure you're ready to receive feedback?");
     }
 
-    if (this.onlyHot(aggregate) || this.onlyCold(aggregate)) {
-      this.giveFeedbackOnlyHotOrOnlyCold(aggregate);
-    } else if (this.noPairs(aggregate) || this.onlyPairs(aggregate)) {
-      this.giveFeedbackNoPairsOrOnlyPairs(aggregate);
-    } else if (this.numPairs(aggregate) === (this.numHotOnly(aggregate) + this.numColdOnly(aggregate))) {
-      this.showFeedbackCase(`2D`);
-      this.getFeedbackNumPairsEqualsSingles(aggregate);
-    } else if (this.numPairs(aggregate) !== (this.numHotOnly(aggregate) + this.numColdOnly(aggregate))) {
-      this.showFeedbackCase(`2E`);
-      this.getFeedbackNumPairsNotEqualsSingles(aggregate);
+    if (calculateFeedback) {
+      const aggregate = this.getFlaggedCellsAggregate();
+      if (this.noCellSelected(aggregate)) {
+        this.feedback("[Condition NoneSelected] Please choose experiment(s) that you want to run.");
+        return;
+      }
+
+      if (this.onlyHot(aggregate) || this.onlyCold(aggregate)) {
+        this.giveFeedbackOnlyHotOrOnlyCold(aggregate);
+      } else if (this.noPairs(aggregate) || this.onlyPairs(aggregate)) {
+        this.giveFeedbackNoPairsOrOnlyPairs(aggregate);
+      } else if (this.numPairs(aggregate) === (this.numHotOnly(aggregate) + this.numColdOnly(aggregate))) {
+        this.showFeedbackCase(`2D`);
+        this.getFeedbackNumPairsEqualsSingles(aggregate);
+      } else if (this.numPairs(aggregate) !== (this.numHotOnly(aggregate) + this.numColdOnly(aggregate))) {
+        this.showFeedbackCase(`2E`);
+        this.getFeedbackNumPairsNotEqualsSingles(aggregate);
+      }
+
+      if (getMaxNumAutoScoreAttempts() === 1) {
+        this.disableFeedbackButton();
+      }
     }
+  }
+
+  disableFeedbackButton() {
+    $("#feedbackButton").prop('disabled', true);
+    $("#feedbackButton").css('background-color', 'grey');
+    $("#feedbackButton").css('cursor', 'auto');
   }
 
   giveFeedbackOnlyHotOrOnlyCold(aggregate) {
     const allMaterialsFlagged = this.getAllMaterialsFlagged(aggregate);
     const moreSelectedTemp = this.onlyHot(aggregate) ? 'hot' : 'cold';
-    const summary = `It seems you want to investigate materials for a ${moreSelectedTemp} beverage because your plan includes only ${moreSelectedTemp} tests.  
+    const summary = `It seems you want to investigate materials for a ${moreSelectedTemp} beverage because your plan includes only ${moreSelectedTemp} tests.
         You want to compare ${allMaterialsFlagged.length} material(s): ${allMaterialsFlagged.join(", ")}.`;
     let questions = `Does running only ${moreSelectedTemp} tests give you the evidence you need to decide on the best material?`;
     const numMaterials = this.getNumMaterials(aggregate);
     if (numMaterials === 1) {
       this.showFeedbackCase(`1A`);
-      questions = `Does running only one test with one material and one temperature give you enough evidence to compare and decide on the best material? 
+      questions = `Does running only one test with one material and one temperature give you enough evidence to compare and decide on the best material?
             Based on what you know about the six materials, are there any additional tests it would be helpful to add?`;
     } else if (numMaterials <= 2) {
       this.showFeedbackCase(`1A`);
-      questions = `${questions} Based on what you know about the six materials, are there any additional 
+      questions = `${questions} Based on what you know about the six materials, are there any additional
             tests it would be helpful to add? `;
     } else if (numMaterials <= 4) {
       this.showFeedbackCase(`1B`);
@@ -308,7 +334,7 @@ class Grids extends WISEAPI {
             add or eliminate from your plan? `;
     } else {
       this.showFeedbackCase(`1C`);
-      questions = `${questions} Based on what you know about the six materials, are there any tests you can 
+      questions = `${questions} Based on what you know about the six materials, are there any tests you can
             eliminate from your plan? `;
     }
     const budgetCheck = this.getFeedbackBudgeCheck(aggregate);
@@ -328,24 +354,24 @@ class Grids extends WISEAPI {
     let summary;
     let questions;
     if (this.numColdOnly(aggregate) === this.numHotOnly(aggregate)) {
-      summary = `It seems you are undecided between or want to investigate both temperature beverages because your plan includes an equal number of hot and cold tests. 
+      summary = `It seems you are undecided between or want to investigate both temperature beverages because your plan includes an equal number of hot and cold tests.
           You want to compare ${allMaterialsFlagged.length} material(s): ${allMaterialsFlagged.join(", ")}.`;
       questions = `Does running a combination of cold and hot tests help you to decide on the best material?`;
     } else {
       const moreSelectedTemp = this.numColdOnly(aggregate) > this.numHotOnly(aggregate) ? 'cold' : 'hot';
-      summary = `It seems you want to investigate materials for a ${moreSelectedTemp} beverage because your plan includes more ${moreSelectedTemp} tests. 
+      summary = `It seems you want to investigate materials for a ${moreSelectedTemp} beverage because your plan includes more ${moreSelectedTemp} tests.
         You want to compare ${allMaterialsFlagged.length} material(s): ${allMaterialsFlagged.join(", ")}.`;
       questions = `Does running more ${moreSelectedTemp} tests give the evidence you need to decide on the best material?`;
     }
     const numMaterials = this.getNumMaterials(aggregate);
     if (numMaterials <= 2) {
-      questions = `${questions} Based on what you know about the six materials, are there any additional 
+      questions = `${questions} Based on what you know about the six materials, are there any additional
             tests it would be helpful to add?`;
     } else if (numMaterials <= 4) {
       questions = `${questions} Based on what you know about the six materials, are there any tests you should
             add or eliminate from your plan?`;
     } else {
-      questions = `${questions} Based on what you know about the six materials, are there any tests you can 
+      questions = `${questions} Based on what you know about the six materials, are there any tests you can
             eliminate from your plan?`;
     }
     const budgetCheck = this.getFeedbackBudgeCheck(aggregate);
@@ -362,18 +388,18 @@ class Grids extends WISEAPI {
     if (this.noPairs(aggregate)) {
       if (this.numColdOnly(aggregate) === this.numHotOnly(aggregate)) {
         this.showFeedbackCase(`2A`);
-        summary = `It seems you are undecided between or want to investigate both temperature beverages because your plan includes an equal number of both hot and cold tests. 
+        summary = `It seems you are undecided between or want to investigate both temperature beverages because your plan includes an equal number of both hot and cold tests.
           You want to compare ${allMaterialsFlagged.length} material(s): ${allMaterialsFlagged.join(", ")}.`;
       } else {
         this.showFeedbackCase(`2B`);
         const moreSelectedTemp = this.numColdOnly(aggregate) > this.numHotOnly(aggregate) ? 'cold' : 'hot';
         const lessSelectedTemp = this.numColdOnly(aggregate) < this.numHotOnly(aggregate) ? 'cold' : 'hot';
-        summary = `It seems you want to investigate materials for a ${moreSelectedTemp} beverage because your plan includes more ${moreSelectedTemp} tests than ${lessSelectedTemp} tests. 
+        summary = `It seems you want to investigate materials for a ${moreSelectedTemp} beverage because your plan includes more ${moreSelectedTemp} tests than ${lessSelectedTemp} tests.
           You want to compare ${allMaterialsFlagged.length} material(s): ${allMaterialsFlagged.join(", ")}.`;
       }
     } else if (this.onlyPairs(aggregate)) {
       this.showFeedbackCase(`2C`);
-      summary = `It seems you are undecided between or want to investigate both temperature beverages because your plan includes an equal number of both hot and cold tests. 
+      summary = `It seems you are undecided between or want to investigate both temperature beverages because your plan includes an equal number of both hot and cold tests.
         You want to compare ${allMaterialsFlagged.length} material(s): ${allMaterialsFlagged.join(", ")}.`;
     }
     return summary;
@@ -382,13 +408,13 @@ class Grids extends WISEAPI {
   getQuestionsForPairsOrNoPairs(numMaterials) {
     let questions = `Does running a combination of cold and hot tests help you to decide on the best material?`;
     if (numMaterials <= 2) {
-      questions = `${questions} Based on what you know about the six materials, are there any additional 
+      questions = `${questions} Based on what you know about the six materials, are there any additional
             tests it would be helpful to add? `;
     } else if (numMaterials <= 4) {
       questions = `${questions} Based on what you know about the six materials, are there any tests you should
             add or eliminate from your plan?`;
     } else {
-      questions = `${questions} Based on what you know about the six materials, are there any tests you can 
+      questions = `${questions} Based on what you know about the six materials, are there any tests you can
             eliminate from your plan?`;
     }
     return questions;
@@ -396,7 +422,7 @@ class Grids extends WISEAPI {
 
   getFeedbackBudgeCheck() {
     const numTests = this.numTests();
-    return `Your plan uses ${numTests} out of the 12 possible tests (${Math.round(numTests / 12 * 100)}% of your budget). 
+    return `Your plan uses ${numTests} out of the 12 possible tests (${Math.round(numTests / 12 * 100)}% of your budget).
           Remember, your goal is to gather enough evidence to recommend a material using as little of your budget
           as you can.`
   }

@@ -6,9 +6,9 @@
 function getURLParameters(key) {
   const parameters = {};
   window.location.search
-      .replace(/[?&]+([^=&]+)=([^&]*)/gi, function(str, key, value) {
-        parameters[key] = value;
-      });
+    .replace(/[?&]+([^=&]+)=([^&]*)/gi, function(str, key, value) {
+      parameters[key] = value;
+    });
   return key ? parameters[key] : parameters;
 }
 
@@ -17,7 +17,7 @@ function isHideCanvas() {
 }
 
 function isShowCanvas() {
-  const showCanvas = getURLParameters("showCanvas");
+  const showCanvas = getURLParameters('showCanvas');
   return showCanvas == undefined || showCanvas === 'true';
 }
 
@@ -37,24 +37,24 @@ function isControlDisplayedAndEditable(controlName) {
 }
 
 function isShowSelectTrialGrid() {
-  const selectTrialMode = getURLParameters("selectTrialMode");
+  const selectTrialMode = getURLParameters('selectTrialMode');
   return selectTrialMode === 'grid';
 }
 
 function isCollectMode() {
-  return getURLParameters("mode") === 'collect';
+  return getURLParameters('mode') === 'collect';
 }
 
 function isFlagMode() {
-  return getURLParameters("mode") === 'flag';
+  return getURLParameters('mode') === 'flag';
 }
 
 function isInterpretMode() {
-  return getURLParameters("mode") === 'interpret';
+  return getURLParameters('mode') === 'interpret';
 }
 
 function getAutoScoreMode() {
-  return getURLParameters("autoScore");
+  return getURLParameters('autoScore');
 }
 
 function isAutoScoreMaterialMode() {
@@ -66,26 +66,26 @@ function isAutoScoreTemperatureMode() {
 }
 
 function getMaxNumAutoScoreAttempts() {
-  return getURLParameters("maxNumAutoScoreAttempts")
+  return getURLParameters('maxNumAutoScoreAttempts');
 }
 
 function getStartingMaterial() {
-  return getURLParameters("material");
+  return getURLParameters('material');
 }
 
 function getStartingBevTemp() {
-  return getURLParameters("bevTemp");
+  return getURLParameters('bevTemp');
 }
 
 function getStartingAirTemp() {
-  return getURLParameters("airTemp");
+  return getURLParameters('airTemp');
 }
 
 function getAllAvailableTemps() {
-  const tempsParam = getURLParameters("temps");
+  const tempsParam = getURLParameters('temps');
   if (tempsParam == null) {
-    return ["Hot","Warm","Cold"];
+    return ['Hot','Warm','Cold'];
   } else {
-    return tempsParam.split(",");
+    return tempsParam.split(',');
   }
 }
