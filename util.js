@@ -66,7 +66,7 @@ function isAutoScoreTemperatureMode() {
 }
 
 function getMaxNumAutoScoreAttempts() {
-  return getURLParameters('maxNumAutoScoreAttempts');
+  return parseInt(getURLParameters('maxNumAutoScoreAttempts'));
 }
 
 function getStartingMaterial() {
