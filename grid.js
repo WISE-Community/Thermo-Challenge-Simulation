@@ -24,7 +24,7 @@ function init() {
 
 function showOnlyAvailableTemps() {
   const allAvailableTemps = getAllAvailableTemps();
-  ["Hot","Warm","Cold"].map((temp) => {
+  temperatures.map((temp) => {
     if (!allAvailableTemps.includes(temp)) {
       $(`.Temp.${temp}`).hide();
     }
@@ -92,7 +92,7 @@ class Grids extends WISEAPI {
 
   showCellOrders() {
     for (let c = 0; c < this.completedCells.length; c++) {
-      let cell = this.completedCells[c];
+      const cell = this.completedCells[c];
       this.showOrderNumberOnCell(cell.material, cell.bevTemp, cell.airTemp, c + 1);
     }
   }
@@ -105,7 +105,8 @@ class Grids extends WISEAPI {
     return {
       material: material,
       bevTemp: bevTemp,
-      airTemp: airTemp
+      airTemp: airTemp,
+      dateAdded: Date.now()
     }
   }
 
@@ -116,7 +117,7 @@ class Grids extends WISEAPI {
   }
 
   isCellCompleted(material, bevTemp, airTemp) {
-    for (let completedCell of this.completedCells) {
+    for (const completedCell of this.completedCells) {
       if (this.cellAttributesMatch(completedCell, material, bevTemp, airTemp)) {
         return true;
       }
@@ -129,7 +130,7 @@ class Grids extends WISEAPI {
   }
 
   isCellSelected(material, bevTemp, airTemp) {
-    for (let selectedCell of this.selectedCells) {
+    for (const selectedCell of this.selectedCells) {
       if (this.cellAttributesMatch(selectedCell, material, bevTemp, airTemp)) {
         return true;
       }
@@ -139,7 +140,7 @@ class Grids extends WISEAPI {
 
   removeSelectedCell(material, bevTemp, airTemp) {
     for (let c = 0; c < this.selectedCells.length; c++) {
-      let selectedCell = this.selectedCells[c];
+      const selectedCell = this.selectedCells[c];
       if (this.cellAttributesMatch(selectedCell, material, bevTemp, airTemp)) {
         this.selectedCells.splice(c, 1);
         c--;
@@ -426,66 +427,6 @@ class Grids extends WISEAPI {
           as you can.`
   }
 
-  giveFeedbackMixedHotAndCold(aggregate) {
-
-  }
-
-  giveFeedback_old() {
-    const aggregate = this.getFlaggedCellsAggregate();
-    if (this.noCellSelected(aggregate)) {
-      this.feedback("[Condition NoneSelected] Please choose experiment(s) that you want to run.");
-      return;
-    }
-
-    if (this.allCellsSelected(aggregate)) {
-      this.feedback(`[Condition 6Pairs] Are all of these tests necessary? Your plan includes 12 of the 12 possible tests.`);
-      return;
-    }
-
-    if (isAutoScoreTemperatureMode()) {
-      if (this.allHot(aggregate)) {
-        this.feedback("Guidance: all hot");
-      } else if (this.allCold(aggregate)) {
-        this.feedback("Guidance: all cold");
-      } else if (this.onlyPairs(aggregate)) {
-        this.feedback("Guidance: only hot & cold");
-      } else if (this.hotOnlyEqualsColdOnly(aggregate)) {
-        this.feedback("Guidance: hot only = cold only");
-      } else if (this.hotOnlyMoreThanColdOnly(aggregate)) {
-        this.feedback("Guidance: hot only > cold only");
-      } else if (this.hotOnlyLessThanColdOnly(aggregate)) {
-        this.feedback("Guidance: hot only < cold only");
-      }
-    } else if (isAutoScoreMaterialMode()) {
-      const allMaterialsFlagged = this.getAllMaterialsFlagged(aggregate);
-      if (this.noPairs(aggregate)) {
-        this.feedback(`[Condition NoPairs] It looks like you’re interested in investigating ${allMaterialsFlagged.length} material(s): ${allMaterialsFlagged.join(", ")}.
-          Your plan includes one temperature test for each material.<br/>
-          To improve your experiment plan, consider:
-          Will testing just one temperature for a material help you decide
-          how the material compares against other materials for insulating a beverage? `);
-      } else if (this.onlyPairs(aggregate) && this.numPairs(aggregate) === 1) {
-        this.feedback(`[Condition OnePair] It looks like you’re interested in investigating ${allMaterialsFlagged.length} material(s): ${allMaterialsFlagged.join(", ")}.
-          Your plan includes both hot and cold tests for these materials.<br/>
-          To improve your experiment plan, consider:
-          Are there any other materials you would like to compare to ${allMaterialsFlagged.join(", ")}?
-          What test(s) should you add to your plan to investigate these other materials?`);
-      } else if (this.onlyPairs(aggregate) && this.numPairs(aggregate) >= 2 && this.numPairs(aggregate) <= 5) {
-        this.feedback(`[Condition 2-5Pairs] It looks like you’re interested in investigating ${allMaterialsFlagged.length} material(s): ${allMaterialsFlagged.join(", ")}.
-          Your plan includes both hot and cold tests for these materials.<br/>
-          To improve your experiment plan, consider:
-          Are there any other materials you would like to compare to ${allMaterialsFlagged.join(", ")}?
-          What test(s) should you add to your plan to investigate these other materials?`);
-      } else {
-        this.feedback(`[Condition Singles] It looks like you’re interested in investigating ${allMaterialsFlagged.length} material(s): ${allMaterialsFlagged.join(", ")}.
-          Your plan includes set of hot and cold tests for ${aggregate.hotAndCold.join(", ")}
-          and only one temperature test each for materials ${aggregate.hotOnly.concat(aggregate.coldOnly).join(", ")}.<br/>
-          To improve your experiment plan, consider: Will testing just one temperature for a material help you decide
-          how the material compares against other materials for insulating a beverage?`);
-      }
-    }
-  }
-
   getFlaggedCellsAggregate() {
     const flaggedCellsByMaterial = {};
     const flaggedCellsHotAndCold = [];
@@ -522,10 +463,6 @@ class Grids extends WISEAPI {
         this.numPairs(aggregate) === 0;
   }
 
-  allCellsSelected(aggregate) {
-    return this.numPairs(aggregate) === materials.length;
-  }
-
   noPairs(aggregate) {
     return this.numPairs(aggregate) === 0 &&
         (this.numHotOnly(aggregate) > 0 || this.numColdOnly(aggregate) > 0);
@@ -537,20 +474,12 @@ class Grids extends WISEAPI {
 
   getNumMaterials(aggregate) {
     let numMaterials = 0;
-    for (let material of materials) {
+    for (const material of materials) {
       if (this.getFlaggedCellsByMaterial(material).length > 0) {
         numMaterials++;
       }
     }
     return numMaterials;
-  }
-
-  allHot(aggregate) {
-    return this.numPairs(aggregate) + this.numHotOnly(aggregate) === materials.length;
-  }
-
-  allCold(aggregate) {
-    return this.numPairs(aggregate) + this.numColdOnly(aggregate) === materials.length;
   }
 
   onlyCold(aggregate) {
@@ -566,21 +495,6 @@ class Grids extends WISEAPI {
   onlyPairs(aggregate) {
     return this.numPairs(aggregate) > 0 &&
         this.numHotOnly(aggregate) === 0 && this.numColdOnly(aggregate)=== 0;
-  }
-
-  hotOnlyEqualsColdOnly(aggregate) {
-    return this.numPairs(aggregate) > 0 &&
-        this.numHotOnly(aggregate) === this.numColdOnly();
-  }
-
-  hotOnlyMoreThanColdOnly(aggregate) {
-    return this.numHotOnly(aggregate) > 0 &&
-        this.numHotOnly(aggregate) > this.numColdOnly();
-  }
-
-  hotOnlyLessThanColdOnly(aggregate) {
-    return this.numColdOnly(aggregate)> 0 &&
-        this.numHotOnly(aggregate) < this.numColdOnly();
   }
 
   numPairs(aggregate) {
@@ -620,13 +534,6 @@ class Grids extends WISEAPI {
   clearLog() {
     $("#log").html("");
   }
-
-  appendStateToLog(aggregate) {
-    $("#log").append(`Number of tests: ${this.numPairs(aggregate) * 2 + this.numHotOnly(aggregate) + this.numColdOnly(aggregate)} / 12`);
-    $("#log").append(`Hot and Cold (${this.numPairs(aggregate)}): [${aggregate.hotAndCold.join(",")}]`);
-    $("#log").append(`Hot only (${this.numHotOnly(aggregate)}): [${aggregate.hotOnly.join(",")}]`);
-    $("#log").append(`Cold only (${this.numColdOnly(aggregate)}): [${aggregate.coldOnly.join(",")}]`);
-  }
 }
 
 class FlagGrids extends Grids {
@@ -635,9 +542,9 @@ class FlagGrids extends Grids {
   }
 
   cellClicked(cellDOMElement) {
-    let material = cellDOMElement.attr("material");
-    let bevTemp = cellDOMElement.attr("bevTemp");
-    let airTemp = cellDOMElement.attr("airTemp");
+    const material = cellDOMElement.attr("material");
+    const bevTemp = cellDOMElement.attr("bevTemp");
+    const airTemp = cellDOMElement.attr("airTemp");
     if (this.isCellFlagged(material, bevTemp, airTemp)) {
       this.removeFlaggedCell(material, bevTemp, airTemp);
     } else {
@@ -655,7 +562,7 @@ class FlagGrids extends Grids {
 
   removeFlaggedCell(material, bevTemp, airTemp) {
     for (let c = 0; c < this.flaggedCells.length; c++) {
-      let flaggedCell = this.flaggedCells[c];
+      const flaggedCell = this.flaggedCells[c];
       if (this.cellAttributesMatch(flaggedCell, material, bevTemp, airTemp)) {
         this.flaggedCells.splice(c, 1);
         c--;
@@ -664,7 +571,7 @@ class FlagGrids extends Grids {
   }
 
   isCellFlagged(material, bevTemp, airTemp) {
-    for (let flaggedCells of this.flaggedCells) {
+    for (const flaggedCells of this.flaggedCells) {
       if (this.cellAttributesMatch(flaggedCells, material, bevTemp, airTemp)) {
         return true;
       }
