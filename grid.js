@@ -206,7 +206,7 @@ class Grids extends WISEAPI {
   handleLatestAnnotationsMessage(messageData) {
     const latestScoreAnnotation = messageData.latestScoreAnnotation;
     const latestCommentAnnotation = messageData.latestCommentAnnotation;
-    if (getMaxNumAutoScoreAttempts() == 1 && latestCommentAnnotation != null) {
+    if (getMaxNumAutoScoreAttempts() === 1 && latestCommentAnnotation != null) {
       this.disableFeedbackButton();
     }
   }
@@ -278,7 +278,7 @@ class Grids extends WISEAPI {
 
   giveFeedback() {
     let calculateFeedback = true;
-    if (getMaxNumAutoScoreAttempts() == 1) {
+    if (getMaxNumAutoScoreAttempts() === 1) {
       calculateFeedback = confirm("You only have one attempt to receive feedback, are you sure you're ready to receive feedback?");
     }
 
@@ -301,7 +301,7 @@ class Grids extends WISEAPI {
         this.getFeedbackNumPairsNotEqualsSingles(aggregate);
       }
 
-      if (getMaxNumAutoScoreAttempts() == 1) {
+      if (getMaxNumAutoScoreAttempts() === 1) {
         this.disableFeedbackButton();
       }
     }
